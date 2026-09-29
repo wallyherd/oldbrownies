@@ -16,13 +16,15 @@ import { MixSabores, mixSortido } from '@/features/repasse/MixSabores'
 
 function Passo({ n, titulo, detalhe, children }: { n: number; titulo: string; detalhe?: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3 border-b border-fio py-3">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-deco border border-osso font-titulo font-bold">{n}</span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-bold">{titulo}</span>
-        {detalhe && <span className="block text-[13px] text-cinza">{detalhe}</span>}
-      </span>
-      {children}
+    <div className="flex items-center justify-between gap-2 sm:gap-3 border-b border-fio py-2.5 sm:py-3">
+      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 pr-1">
+        <span className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-deco border border-osso font-titulo text-[13px] sm:text-[14px] font-bold">{n}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold text-[14px] sm:text-[16px] leading-tight">{titulo}</span>
+          {detalhe && <span className="block text-[12px] sm:text-[13px] text-cinza leading-tight">{detalhe}</span>}
+        </span>
+      </div>
+      <div className="shrink-0">{children}</div>
     </div>
   )
 }
@@ -62,7 +64,7 @@ function FormVisita({ resumo, aoTerminar }: { resumo: ResumoParceiro; aoTerminar
 
   return (
     <>
-      <section className="grid grid-cols-3 gap-3">
+      <section className="grid grid-cols-3 gap-2 sm:gap-3">
         <Numero rotulo="No ponto" valor={ponto.estoqueEstimado} detalhe="pelo sistema" />
         <Numero rotulo="Troca 4 sem." valor={pct(ponto.trocaPct4)} tom={(ponto.trocaPct4 ?? 0) > 0.2 ? 'aviso' : undefined} />
         <Numero rotulo="Fim do teste" valor={ponto.diasFimTeste === null ? '—' : ponto.diasFimTeste < 0 ? 'passou' : `${ponto.diasFimTeste} d`} />
@@ -70,16 +72,16 @@ function FormVisita({ resumo, aoTerminar }: { resumo: ResumoParceiro; aoTerminar
 
       <div className="border-t border-fio">
         <Passo n={1} titulo="Contado no balcão" detalhe={`Vendeu ${vendido} desde a última visita`}>
-          <Stepper rotulo="contado" valor={contado} aoMudar={(v) => { setContado(v); setTrocado(Math.min(trocado, v)) }} />
+          <Stepper compacto rotulo="contado" valor={contado} aoMudar={(v) => { setContado(v); setTrocado(Math.min(trocado, v)) }} />
         </Passo>
         <Passo n={2} titulo="Trocar" detalhe="Voltam para a loja, mesmo lote">
-          <Stepper rotulo="trocados" valor={trocado} max={contado} aoMudar={setTrocado} />
+          <Stepper compacto rotulo="trocados" valor={trocado} max={contado} aoMudar={setTrocado} />
         </Passo>
         <Passo n={3} titulo="Repor sem custo" detalhe="Brownie novo no lugar dos trocados">
-          <span className="min-w-14 text-center text-2xl font-bold">{trocado}</span>
+          <span className="min-w-8 sm:min-w-10 text-center text-xl sm:text-2xl font-bold">{trocado}</span>
         </Passo>
         <Passo n={4} titulo="Comprou mais?" detalhe="Caixa de 24, no Pix">
-          <Stepper rotulo="caixas" valor={caixas} max={10} aoMudar={setCaixas} />
+          <Stepper compacto rotulo="caixas" valor={caixas} max={10} aoMudar={setCaixas} />
         </Passo>
       </div>
 

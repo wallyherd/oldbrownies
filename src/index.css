@@ -23,6 +23,9 @@
   html {
     color-scheme: dark;
     -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow-x: hidden;
   }
   body {
     @apply bg-tinta text-osso font-texto antialiased;
@@ -31,12 +34,22 @@
     line-height: 1.45;
     font-variant-numeric: tabular-nums;
     overscroll-behavior-y: none;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+    min-height: 100dvh;
+    touch-action: manipulation;
   }
   h1, h2, h3 {
     @apply font-titulo;
   }
   input, select, textarea, button {
     font: inherit;
+    touch-action: manipulation;
+  }
+  /* Previne zoom automático do iOS Safari em inputs */
+  input, select, textarea {
+    font-size: 16px;
   }
   :focus-visible {
     outline: 2px solid var(--color-osso);

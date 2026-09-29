@@ -11,25 +11,25 @@ export function Tela({ titulo, subtitulo, voltar, acao, children }: {
 }) {
   const navegar = useNavigate()
   return (
-    <main className="mx-auto w-full max-w-[30rem] px-4 pb-36 pt-2">
-      <header className="mb-5 flex items-start gap-3">
+    <main className="mx-auto w-full max-w-[30rem] px-3.5 sm:px-4 pl-[max(0.875rem,env(safe-area-inset-left))] pr-[max(0.875rem,env(safe-area-inset-right))] pb-36 pt-2">
+      <header className="mb-4 sm:mb-5 flex items-start gap-2.5 sm:gap-3">
         {voltar && (
           <button
             type="button"
             onClick={() => navegar(-1)}
             aria-label="Voltar"
-            className="-ml-2 flex size-12 shrink-0 items-center justify-center rounded-deco active:bg-grafite"
+            className="-ml-1.5 flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-deco active:bg-grafite touch-manipulation"
           >
-            <ArrowLeft className="size-6" />
+            <ArrowLeft className="size-5 sm:size-6" />
           </button>
         )}
-        <div className="min-w-0 flex-1 pt-1">
-          <h1 className="text-2xl font-bold leading-tight tracking-[0.04em]">{titulo}</h1>
-          {subtitulo && <p className="mt-0.5 text-[15px] text-cinza">{subtitulo}</p>}
+        <div className="min-w-0 flex-1 pt-0.5">
+          <h1 className="text-xl sm:text-2xl font-bold leading-tight tracking-[0.04em] break-words">{titulo}</h1>
+          {subtitulo && <p className="mt-0.5 text-[14px] sm:text-[15px] text-cinza leading-snug">{subtitulo}</p>}
         </div>
         {acao}
       </header>
-      <div className="space-y-7">{children}</div>
+      <div className="space-y-6 sm:space-y-7">{children}</div>
     </main>
   )
 }

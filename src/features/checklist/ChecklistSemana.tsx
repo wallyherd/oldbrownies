@@ -87,24 +87,24 @@ export function ChecklistSemana() {
 
       {resumo && (
         <>
-          <section className="moldura grid grid-cols-2 gap-4 bg-carvao p-4">
+          <section className="moldura grid grid-cols-2 gap-2.5 sm:gap-4 bg-carvao p-3 sm:p-4">
             <div>
-              <p className="rotulo">Na semana (até hoje)</p>
-              <p className="text-3xl font-bold">{pct(resumo.semana.pct)}</p>
-              <p className="text-[13px] text-cinza">{resumo.semana.feitas} de {resumo.semana.obrigatorias} obrigatórias</p>
+              <p className="rotulo text-[11px] sm:text-[13px]">Na semana (até hoje)</p>
+              <p className="text-2xl sm:text-3xl font-bold">{pct(resumo.semana.pct)}</p>
+              <p className="text-[12px] sm:text-[13px] text-cinza">{resumo.semana.feitas} de {resumo.semana.obrigatorias} obrigatórias</p>
             </div>
             <div>
-              <p className="rotulo">Últimas 4 semanas</p>
-              <p className="text-3xl font-bold">{pct(resumo.quatro.pct)}</p>
-              <p className="text-[13px] text-cinza">{resumo.quatro.feitas} de {resumo.quatro.obrigatorias}</p>
+              <p className="rotulo text-[11px] sm:text-[13px]">Últimas 4 semanas</p>
+              <p className="text-2xl sm:text-3xl font-bold">{pct(resumo.quatro.pct)}</p>
+              <p className="text-[12px] sm:text-[13px] text-cinza">{resumo.quatro.feitas} de {resumo.quatro.obrigatorias}</p>
             </div>
           </section>
 
-          <div className="grid grid-cols-7 gap-1.5" aria-label="Grade da semana">
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5" aria-label="Grade da semana">
             {resumo.porDia.map(({ data, linhas }) => (
               <button key={data} type="button" onClick={() => setAberto(data)}
-                className={cx('flex flex-col gap-1 rounded-deco border p-1.5 text-center', aberto === data ? 'border-osso' : 'border-fio', data === hoje && 'bg-carvao')}>
-                <span className="text-[12px] font-bold uppercase">{DIAS_CURTOS[dias.indexOf(data) + 1]}</span>
+                className={cx('flex flex-col gap-1 rounded-deco border p-1 sm:p-1.5 text-center touch-manipulation transition-all', aberto === data ? 'border-osso' : 'border-fio', data === hoje && 'bg-carvao')}>
+                <span className="text-[10px] sm:text-[12px] font-bold uppercase">{DIAS_CURTOS[dias.indexOf(data) + 1]}</span>
                 {linhas.filter((l) => l.rotinaTarefaId).map((l) => <Quadradinho key={l.chave} linha={l} futuro={data > hoje || data < cad.inicioUso} />)}
               </button>
             ))}

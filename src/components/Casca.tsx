@@ -52,7 +52,7 @@ export function Casca({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh">
-      <div className="sticky top-0 z-30 border-b border-fio bg-tinta/95 pt-[env(safe-area-inset-top)]">
+      <div className="sticky top-0 z-30 border-b border-fio bg-tinta/95 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur-sm">
         <div className="mx-auto flex h-11 max-w-[30rem] items-center justify-between px-4">
           <span className="font-titulo text-[13px] font-bold tracking-[0.32em]">OLD BROWNIES</span>
           <IndicadorSync />
@@ -64,25 +64,25 @@ export function Casca({ children }: { children: ReactNode }) {
       {mostrarVenda && (
         <Link
           to="/vender"
-          className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-[max(1rem,calc(50vw-14rem))] z-30 flex min-h-toque items-center gap-2 rounded-deco border border-tinta bg-osso px-5 text-lg font-bold text-tinta outline outline-1 outline-offset-2 outline-osso active:scale-[0.98]"
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-[max(0.75rem,calc(50vw-14rem))] z-30 flex min-h-12 sm:min-h-toque items-center gap-2 rounded-deco border border-tinta bg-osso px-4 sm:px-5 text-base sm:text-lg font-bold text-tinta outline outline-1 outline-offset-2 outline-osso shadow-md active:scale-[0.98] touch-manipulation"
         >
-          <Plus className="size-5" aria-hidden /> Venda
+          <Plus className="size-5 shrink-0" aria-hidden /> Venda
         </Link>
       )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-fio bg-carvao pb-[env(safe-area-inset-bottom)]" aria-label="Navegação">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-fio bg-carvao pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]" aria-label="Navegação">
         <ul className="mx-auto flex max-w-[30rem]">
           {NAV[sessao.papel].map(({ para, rotulo, icone: Icone }) => (
-            <li key={para} className="flex-1">
+            <li key={para} className="min-w-0 flex-1">
               <NavLink
                 to={para}
                 className={({ isActive }) => cx(
-                  'flex min-h-16 flex-col items-center justify-center gap-1 border-t-2 text-[12px] font-bold uppercase tracking-[0.08em]',
+                  'flex min-h-[58px] sm:min-h-16 flex-col items-center justify-center gap-0.5 sm:gap-1 border-t-2 px-0.5 text-[10px] sm:text-[12px] font-bold uppercase tracking-tight sm:tracking-[0.08em] touch-manipulation transition-colors',
                   isActive ? 'border-osso text-osso' : 'border-transparent text-cinza',
                 )}
               >
-                <Icone className="size-6" aria-hidden />
-                {rotulo}
+                <Icone className="size-5 sm:size-6 shrink-0" aria-hidden />
+                <span className="truncate max-w-full text-center">{rotulo}</span>
               </NavLink>
             </li>
           ))}

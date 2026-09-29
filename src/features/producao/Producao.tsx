@@ -99,16 +99,16 @@ export function Producao() {
                   <p className="mb-2 font-bold leading-tight">
                     {s.nome} <span className="text-[13px] font-semibold text-cinza">· validade {s.validadeDias} dias</span>
                   </p>
-                  <div className="flex flex-wrap justify-between gap-2">
-                    <div><span className="rotulo block">Pequeno · 35</span>{passo(s.id, 'pequeno')}</div>
-                    <div><span className="rotulo block">Grande · 24</span>{passo(s.id, 'grande')}</div>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                    <div><span className="rotulo block mb-1">Pequeno · 35</span>{passo(s.id, 'pequeno')}</div>
+                    <div><span className="rotulo block mb-1">Grande · 24</span>{passo(s.id, 'grande')}</div>
                   </div>
                 </li>
               ))}
             </ul>
           </Secao>
 
-          <section className="moldura grid grid-cols-3 gap-3 bg-carvao p-4">
+          <section className="moldura grid grid-cols-3 gap-2 sm:gap-3 bg-carvao p-3 sm:p-4">
             <Numero rotulo="Formas" valor={resumo.totalFormas} detalhe={`${resumo.jornadas} jornada${resumo.jornadas > 1 ? 's' : ''}`} />
             <Numero rotulo="Peças" valor={numero(resumo.pecas)} />
             {veCustos(sessao.papel)

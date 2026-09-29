@@ -44,36 +44,38 @@ export function Custos() {
 
   return (
     <Tela titulo="Custos" voltar subtitulo={`Com o preço de insumo de hoje · ${numero(t.formasSemana, 1)} formas por semana`}>
-      <section className="moldura grid grid-cols-2 gap-4 bg-carvao p-4">
+      <section className="moldura grid grid-cols-2 gap-2.5 sm:gap-4 bg-carvao p-3 sm:p-4">
         {TAMANHOS.map((tam) => (
           <div key={tam}>
             <p className="rotulo">{tam} no mix</p>
-            <p className="text-3xl font-bold">{precoPeca(t.variavelMix[tam])}</p>
-            <p className="text-[13px] text-cinza">direto {numero(t.diretoMix[tam], 2)} + produção {numero(t.producao[tam], 2)}</p>
+            <p className="text-2xl sm:text-3xl font-bold">{precoPeca(t.variavelMix[tam])}</p>
+            <p className="text-[12px] sm:text-[13px] text-cinza">direto {numero(t.diretoMix[tam], 2)} + produção {numero(t.producao[tam], 2)}</p>
           </div>
         ))}
       </section>
       {t.etiqueta > 0.5 && <Aviso>Etiqueta a {reais(t.etiqueta)} por peça: conferir com a gráfica (R$ 0,80 ou R$ 0,20).</Aviso>}
 
       <Secao titulo="Custo variável por sabor">
-        <table className="w-full text-[15px]">
-          <thead>
-            <tr className="text-left text-[12px] uppercase tracking-[0.08em] text-cinza">
-              <th className="py-1 font-bold">Sabor</th><th className="px-1 text-right font-bold">Pequeno</th><th className="px-1 text-right font-bold">Grande</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-fio border-y border-fio">
-            {cad.sabores.filter((s) => s.ativo).map((s) => (
-              <tr key={s.id}>
-                <th scope="row" className="py-2 text-left align-top font-bold">
-                  {s.nome}
-                  <span className="block text-[12px] font-semibold text-cinza">massa {reais(t.massa[s.id])} · mix {s.pesoMix}</span>
-                </th>
-                {TAMANHOS.map((tam) => <Celula key={tam} variavel={t.variavel[s.id][tam]} direto={t.direto[s.id][tam]} producao={t.producao[tam]} />)}
+        <div className="overflow-x-auto -mx-1 sm:mx-0 [scrollbar-width:none]">
+          <table className="w-full text-[14px] sm:text-[15px]">
+            <thead>
+              <tr className="text-left text-[11px] sm:text-[12px] uppercase tracking-[0.08em] text-cinza">
+                <th className="py-1 font-bold">Sabor</th><th className="px-1 text-right font-bold">Pequeno</th><th className="px-1 text-right font-bold">Grande</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-fio border-y border-fio">
+              {cad.sabores.filter((s) => s.ativo).map((s) => (
+                <tr key={s.id}>
+                  <th scope="row" className="py-2 text-left align-top font-bold">
+                    {s.nome}
+                    <span className="block text-[11px] sm:text-[12px] font-semibold text-cinza">massa {reais(t.massa[s.id])} · mix {s.pesoMix}</span>
+                  </th>
+                  {TAMANHOS.map((tam) => <Celula key={tam} variavel={t.variavel[s.id][tam]} direto={t.direto[s.id][tam]} producao={t.producao[tam]} />)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <p className="mt-2 text-[13px] text-cinza">
           Variável = direto (massa ÷ peças + etiqueta {reais(t.etiqueta)} + embalagem {reais(t.embalagem)}) + produção
           (diária e gás: {reais(t.producaoPorForma)} por forma, {t.jornadasPorSemana} jornada por semana).

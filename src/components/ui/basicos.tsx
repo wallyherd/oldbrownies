@@ -23,9 +23,9 @@ export function Botao({ variante = 'primario', bloco, pequeno, className, type =
     <button
       type={type}
       className={cx(
-        'inline-flex items-center justify-center gap-2 rounded-deco font-bold tracking-[0.04em] select-none',
+        'inline-flex items-center justify-center gap-2 rounded-deco font-bold tracking-[0.04em] select-none touch-manipulation',
         'transition-transform duration-100 active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100',
-        pequeno ? 'min-h-11 px-3 text-[15px]' : 'min-h-toque px-5 text-lg',
+        pequeno ? 'min-h-11 px-3 text-[14px] sm:text-[15px]' : 'min-h-[50px] sm:min-h-toque px-4 sm:px-5 text-base sm:text-lg',
         VARIANTES[variante], bloco && 'w-full', className,
       )}
       {...props}
@@ -77,9 +77,9 @@ export function Numero({ rotulo, valor, detalhe, tom }: { rotulo: string; valor:
   const cor = tom === 'ok' ? 'text-verde' : tom === 'alerta' ? 'text-vermelho' : tom === 'aviso' ? 'text-ambar' : 'text-osso'
   return (
     <div className="min-w-0">
-      <p className="rotulo">{rotulo}</p>
-      <p className={cx('text-2xl font-bold leading-tight', cor)}>{valor}</p>
-      {detalhe && <p className="text-[13px] text-cinza">{detalhe}</p>}
+      <p className="rotulo text-[11px] sm:text-[13px] truncate">{rotulo}</p>
+      <p className={cx('text-xl sm:text-2xl font-bold leading-tight break-words', cor)}>{valor}</p>
+      {detalhe && <p className="text-[12px] sm:text-[13px] text-cinza leading-tight">{detalhe}</p>}
     </div>
   )
 }
@@ -117,7 +117,7 @@ export function Escolha<T extends string | number>({ rotulo, opcoes, valor, aoMu
   return (
     <fieldset className="space-y-1">
       {rotulo && <legend className="rotulo mb-1">{rotulo}</legend>}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5 sm:gap-2">
         {opcoes.map((o) => (
           <button
             key={String(o.valor)}
@@ -125,7 +125,7 @@ export function Escolha<T extends string | number>({ rotulo, opcoes, valor, aoMu
             aria-pressed={valor === o.valor}
             onClick={() => aoMudar(o.valor)}
             className={cx(
-              'min-h-12 rounded-deco border px-4 font-bold transition-transform active:scale-[0.98]',
+              'min-h-11 sm:min-h-12 rounded-deco border px-3 sm:px-4 text-[14px] sm:text-base font-bold transition-transform active:scale-[0.98] touch-manipulation',
               valor === o.valor ? 'border-osso bg-osso text-tinta' : 'border-fio text-osso',
             )}
           >

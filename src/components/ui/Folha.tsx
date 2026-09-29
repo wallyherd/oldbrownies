@@ -22,13 +22,13 @@ export function Folha({ aberta, aoFechar, titulo, children }: {
       ref={ref}
       onClose={aoFechar}
       onClick={(e) => e.target === ref.current && aoFechar()}
-      className="m-0 mt-auto mx-auto w-full max-w-[30rem] max-h-[88dvh] overflow-y-auto rounded-t-deco border-t border-osso bg-carvao p-0 text-osso backdrop:bg-black/70"
+      className="m-0 mt-auto mx-auto w-full max-w-[30rem] max-h-[90dvh] overflow-y-auto rounded-t-deco border-t border-osso bg-carvao p-0 text-osso backdrop:bg-black/75 overscroll-contain"
     >
       {aberta && (
-        <div className="px-4 pb-8 pt-3">
+        <div className="px-4 pt-3 pb-[calc(2rem+env(safe-area-inset-bottom))]">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold tracking-[0.04em]">{titulo}</h2>
-            <button type="button" onClick={aoFechar} aria-label="Fechar" className="flex size-12 items-center justify-center rounded-deco active:bg-grafite">
+            <button type="button" onClick={aoFechar} aria-label="Fechar" className="flex size-11 sm:size-12 items-center justify-center rounded-deco active:bg-grafite touch-manipulation">
               <X className="size-6" />
             </button>
           </div>

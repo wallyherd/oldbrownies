@@ -63,7 +63,7 @@ export function Hoje() {
     <Tela titulo={`${DIAS_SEMANA[dia]}, ${dataCurta(hoje)}`} subtitulo={MISSAO[dia]}>
       {sessao.papel === 'dono' && <Recados />}
 
-      <section className="moldura grid grid-cols-3 gap-3 bg-carvao p-4" aria-label="Vendido hoje">
+      <section className="moldura grid grid-cols-3 gap-2 sm:gap-3 bg-carvao p-3 sm:p-4" aria-label="Vendido hoje">
         <Numero rotulo="Peças hoje" valor={numero(totalHoje.pecas)} />
         <Numero rotulo="Vendido" valor={reais(totalHoje.bruto)} />
         {gestao

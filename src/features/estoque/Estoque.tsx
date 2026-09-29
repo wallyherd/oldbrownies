@@ -85,7 +85,7 @@ export function Estoque() {
 
   return (
     <Tela titulo="Estoque" subtitulo="A soma dos movimentos: ninguém edita o número">
-      <section className="moldura grid grid-cols-3 gap-3 bg-carvao p-4">
+      <section className="moldura grid grid-cols-3 gap-2 sm:gap-3 bg-carvao p-3 sm:p-4">
         <Numero rotulo="Peças" valor={numero(estoque.total)} />
         <Numero rotulo="Vencendo" valor={estoque.vencendo.reduce((s, l) => s + l.saldo, 0)} tom={estoque.vencendo.length ? 'aviso' : undefined} />
         {veCustos(sessao.papel)
@@ -95,7 +95,7 @@ export function Estoque() {
       </section>
 
       {podeLancar && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
           <Botao variante={ehSegunda ? 'primario' : 'secundario'} onClick={() => setFolha('contagem')}>Contar</Botao>
           <Botao variante="secundario" onClick={() => setFolha('perda')}>Perda</Botao>
           <Botao variante="secundario" onClick={() => setFolha('amostra')}>Amostra</Botao>

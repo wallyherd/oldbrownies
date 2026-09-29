@@ -141,7 +141,7 @@ export function Vender() {
           <div role="radiogroup" aria-label="Canal" className="grid grid-cols-5 gap-1">
             {CANAIS_VENDA.map((c) => (
               <button key={c.valor} type="button" role="radio" aria-checked={canal === c.valor} onClick={() => mudarCanal(c.valor)}
-                className={cx('min-h-toque rounded-deco border text-[15px] font-bold active:scale-[0.97]',
+                className={cx('min-h-12 sm:min-h-toque rounded-deco border px-0.5 text-[12px] sm:text-[15px] font-bold active:scale-[0.97] touch-manipulation truncate transition-all',
                   canal === c.valor ? 'border-osso bg-osso text-tinta' : 'border-fio')}>
                 {c.rotulo}
               </button>
@@ -227,16 +227,16 @@ export function Vender() {
               <span className="text-cinza">{numero(resumo.pecas)} itens</span>
               <span className="text-2xl font-bold">{reais(resumo.total)}</span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               {PAGAMENTOS.map((p) => {
                 const lucro = resumo.porPagamento[p.valor].lucro
                 const confirmando = confirmarAbaixo === p.valor
                 return (
                   <button key={p.valor} type="button" disabled={bloqueado || enviando} onClick={() => pagar(p.valor)}
-                    className={cx('flex min-h-16 flex-col items-center justify-center rounded-deco border px-1 font-bold active:scale-[0.97] disabled:opacity-40',
+                    className={cx('flex min-h-[58px] sm:min-h-16 flex-col items-center justify-center rounded-deco border px-1 font-bold active:scale-[0.97] touch-manipulation disabled:opacity-40 transition-transform',
                       confirmando ? 'border-vermelho bg-vermelho text-tinta' : 'border-osso bg-osso text-tinta')}>
-                    <span className="text-[16px]">{confirmando ? 'Confirmar' : p.rotulo}</span>
-                    {!equipe && <span className="text-[12px] font-bold opacity-80">{confirmando ? 'abaixo do custo' : `lucro ${reais(lucro)}`}</span>}
+                    <span className="text-[14px] sm:text-[16px] leading-tight">{confirmando ? 'Confirmar' : p.rotulo}</span>
+                    {!equipe && <span className="text-[10px] sm:text-[12px] font-bold opacity-80 truncate max-w-full text-center leading-tight">{confirmando ? 'abaixo custo' : `lucro ${reais(lucro)}`}</span>}
                   </button>
                 )
               })}
