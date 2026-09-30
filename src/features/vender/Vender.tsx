@@ -7,7 +7,7 @@ import { cx } from '@/lib/cx'
 import { useCadastros, type Cadastros } from '@/lib/dados/cadastros'
 import { numero, reais } from '@/lib/formato'
 import { desfazerVenda, registrarVenda } from '@/lib/operacoes/vendas'
-import { Aviso, Botao, Selo } from '@/components/ui/basicos'
+import { Aviso, Selo } from '@/components/ui/basicos'
 import { Secao, Tela } from '@/components/ui/Tela'
 import { mostrarErro, mostrarToast } from '@/components/ui/Toast'
 import { itemDeProduto, itemDeSabor, PAGAMENTOS, useCarrinho, type ItemCarrinho } from './carrinho'
@@ -16,8 +16,6 @@ const CANAIS_VENDA: Array<{ valor: CodigoCanal; rotulo: string }> = [
   { valor: 'loja', rotulo: 'Loja' }, { valor: 'rota', rotulo: 'Rota' }, { valor: 'feira', rotulo: 'Feira' },
   { valor: 'evento', rotulo: 'Evento' }, { valor: 'ifood', rotulo: 'iFood' },
 ]
-
-const outroTamanho = (t: CodigoTamanho): CodigoTamanho => (t === 'pequeno' ? 'grande' : 'pequeno')
 
 function Ladrilho({ nome, preco, qtd, selo, aoTocar }: { nome: string; preco: number; qtd: number; selo?: string; aoTocar: () => void }) {
   return (
@@ -72,26 +70,47 @@ function LinhaCarrinho({ item, podeEditarPreco, aoMudarQtd, aoMudarPreco }: {
   )
 }
 
+const CHAVE_TAMANHOS_CANAL = 'ob.vender.tamanhos'
+
+function lerTamanhosSalvos(): Partial<Record<CodigoCanal, CodigoTamanho>> {
+  try {
+    const salvo = localStorage.getItem(CHAVE_TAMANHOS_CANAL)
+    return salvo ? (JSON.parse(salvo) as Partial<Record<CodigoCanal, CodigoTamanho>>) : {}
+  } catch {
+    return {}
+  }
+}
+
 export function Vender() {
   const sessao = useSessao()
   const cad = useCadastros()
   const [params, setParams] = useSearchParams()
   const equipe = sessao.papel === 'equipe'
   const canal = (equipe ? 'loja' : (params.get('canal') as CodigoCanal)) || 'loja'
-  const [tamanho, setTamanho] = useState<CodigoTamanho | null>(null)
-  const [trocandoTamanho, setTrocandoTamanho] = useState(false)
+  const [tamanhosPorCanal, setTamanhosPorCanal] = useState<Partial<Record<CodigoCanal, CodigoTamanho>>>(lerTamanhosSalvos)
   const [confirmarAbaixo, setConfirmarAbaixo] = useState<Pagamento | null>(null)
   const [enviando, setEnviando] = useState(false)
   const carrinho = useCarrinho(canal, cad)
   const { resumo } = carrinho
 
-  const tamanhoCanal = tamanho ?? cad.canal(canal)?.tamanhoPadrao ?? 'pequeno'
+  const tamanhoCanal = tamanhosPorCanal[canal] ?? cad.canal(canal)?.tamanhoPadrao ?? 'pequeno'
   const qtdDe = (chave: string) => carrinho.itens.find((i) => i.chave === chave)?.qtd ?? 0
   const bloqueado = resumo.atropelaPonto.length > 0
 
+  function definirTamanhoCanal(c: CodigoCanal, t: CodigoTamanho) {
+    setTamanhosPorCanal((antigo) => {
+      const novo = { ...antigo, [c]: t }
+      try {
+        localStorage.setItem(CHAVE_TAMANHOS_CANAL, JSON.stringify(novo))
+      } catch {
+        // sem persistência em modo restrito
+      }
+      return novo
+    })
+  }
+
   function mudarCanal(c: CodigoCanal) {
     setParams({ canal: c }, { replace: true })
-    setTamanho(null)
     setConfirmarAbaixo(null)
     carrinho.limpar()
   }
@@ -168,18 +187,39 @@ export function Vender() {
             )}
           </>
         ) : (
-          <Secao titulo={`Brownie ${tamanhoCanal}`} direita={
-            <button type="button" className="min-h-11 text-[13px] font-bold uppercase tracking-[0.08em] text-cinza" onClick={() => setTrocandoTamanho(true)}>
-              trocar
-            </button>
-          }>
-            {trocandoTamanho && (
-              <div className="mb-3">
-                <Aviso acao={<Botao pequeno variante="secundario" onClick={() => { setTamanho(outroTamanho(tamanhoCanal)); setTrocandoTamanho(false) }}>Trocar</Botao>}>
-                  Este canal vende {cad.canal(canal)?.tamanhoPadrao}. Trocar para {outroTamanho(tamanhoCanal)}?
-                </Aviso>
+          <Secao
+            titulo={`Brownie ${tamanhoCanal}`}
+            direita={
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-pressed={tamanhoCanal === 'pequeno'}
+                  className={cx(
+                    'min-h-9 px-2.5 sm:px-3 text-[12px] sm:text-[13px] font-bold uppercase rounded-deco border transition-all touch-manipulation',
+                    tamanhoCanal === 'pequeno'
+                      ? 'border-osso bg-osso text-tinta'
+                      : 'border-fio text-cinza hover:text-osso active:scale-[0.98]',
+                  )}
+                  onClick={() => definirTamanhoCanal(canal, 'pequeno')}
+                >
+                  Pequeno
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={tamanhoCanal === 'grande'}
+                  className={cx(
+                    'min-h-9 px-2.5 sm:px-3 text-[12px] sm:text-[13px] font-bold uppercase rounded-deco border transition-all touch-manipulation',
+                    tamanhoCanal === 'grande'
+                      ? 'border-osso bg-osso text-tinta'
+                      : 'border-fio text-cinza hover:text-osso active:scale-[0.98]',
+                  )}
+                  onClick={() => definirTamanhoCanal(canal, 'grande')}
+                >
+                  Grande
+                </button>
               </div>
-            )}
+            }
+          >
             <Grade>
               {cad.sabores.filter((s) => s.ativo && !s.soEncomenda).map((s) => {
                 const preco = precoNoCanal(canal, s.id, tamanhoCanal, cad)
