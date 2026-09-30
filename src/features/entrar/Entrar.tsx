@@ -1,12 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, LogOut } from 'lucide-react'
 import { db } from '@/lib/db/banco'
 import { useSessaoOpcional } from '@/lib/sessao'
 import { nuvem } from '@/lib/sync/nuvem'
 import { baixarMembrosDoUsuario, entrarComEmail, useUsuarioNuvem } from '@/lib/sync/auth'
-import { aceitarConvite, criarEmpresaEEntrar, entrarComo } from '@/lib/operacoes/acesso'
+import { aceitarConvite, criarEmpresaEEntrar, entrarComo, sairDaConta } from '@/lib/operacoes/acesso'
 import { Aviso, Botao, Campo, Escolha } from '@/components/ui/basicos'
 import { Folha } from '@/components/ui/Folha'
 import { mostrarErro, Toasts } from '@/components/ui/Toast'
@@ -97,6 +97,23 @@ export function Entrar() {
 
       {!precisaLogin && usuario !== undefined && (
         <div className="space-y-6">
+          {usuario?.email && (
+            <div className="flex items-center justify-between rounded-deco border border-fio bg-carvao/80 px-3.5 py-2.5 text-[13px]">
+              <div className="min-w-0 flex-1 pr-2">
+                <span className="block text-[11px] uppercase tracking-wider text-cinza">Conta conectada</span>
+                <span className="block font-bold text-osso truncate">{usuario.email}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => void sairDaConta()}
+                className="inline-flex items-center gap-1.5 rounded-deco border border-vermelho/40 bg-vermelho/10 px-2.5 py-1.5 text-[13px] font-bold text-vermelho active:scale-95 touch-manipulation"
+              >
+                <LogOut className="size-4 shrink-0" aria-hidden />
+                Deslogar
+              </button>
+            </div>
+          )}
+
           {!nuvem && (
             <Aviso tom="neutro">
               Modo deste aparelho: sem nuvem configurada, os dados ficam só aqui. Dá para testar os três perfis

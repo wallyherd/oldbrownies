@@ -1,11 +1,13 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, LogOut } from 'lucide-react'
 import type { Papel } from '@/lib/db/tipos'
 import { useSessao } from '@/lib/sessao'
 import { useCadastros } from '@/lib/dados/cadastros'
-import { sair } from '@/lib/operacoes/acesso'
+import { sair, sairDaConta } from '@/lib/operacoes/acesso'
 import { Botao } from '@/components/ui/basicos'
 import { Secao, Tela } from '@/components/ui/Tela'
+import { mostrarToast } from '@/components/ui/Toast'
 
 interface Item { para: string; rotulo: string; detalhe?: string; papeis: Papel[] }
 
@@ -44,6 +46,20 @@ export function Mais() {
   const sessao = useSessao()
   const cad = useCadastros()
   const navegar = useNavigate()
+  const [saindo, setSaindo] = useState(false)
+
+  async function handleDeslogar() {
+    if (!window.confirm('Deseja realmente deslogar da sua conta?')) return
+    setSaindo(true)
+    try {
+      await sairDaConta()
+      mostrarToast('Sessão encerrada')
+      navegar('/entrar', { replace: true })
+    } finally {
+      setSaindo(false)
+    }
+  }
+
   return (
     <Tela titulo="Mais" subtitulo={`${sessao.nome} · ${sessao.papel} · ${cad.empresa.nome}`}>
       {GRUPOS.map((g) => {
@@ -67,7 +83,38 @@ export function Mais() {
           </Secao>
         )
       })}
-      <Botao variante="fantasma" bloco onClick={() => { sair(); navegar('/entrar', { replace: true }) }}>Trocar de perfil</Botao>
+
+      <Secao titulo="Conta e sessão">
+        <div className="rounded-deco border border-fio bg-carvao p-4 space-y-3">
+          <div>
+            <p className="text-[12px] uppercase tracking-wider text-cinza">Perfil ativo</p>
+            <p className="font-bold text-base text-osso">{sessao.nome} <span className="text-[13px] text-cinza font-normal">({sessao.papel})</span></p>
+            {sessao.email && <p className="text-[13px] text-cinza mt-0.5">{sessao.email}</p>}
+          </div>
+
+          <div className="grid gap-2 pt-2 border-t border-fio">
+            <Botao
+              variante="fantasma"
+              bloco
+              onClick={() => {
+                sair()
+                navegar('/entrar', { replace: true })
+              }}
+            >
+              Trocar de perfil
+            </Botao>
+            <Botao
+              variante="perigo"
+              bloco
+              disabled={saindo}
+              onClick={handleDeslogar}
+            >
+              <LogOut className="size-4 shrink-0" aria-hidden />
+              {saindo ? 'Deslogando…' : 'Deslogar da conta'}
+            </Botao>
+          </div>
+        </div>
+      </Secao>
     </Tela>
   )
 }
