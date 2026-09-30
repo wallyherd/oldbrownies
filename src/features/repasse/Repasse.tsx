@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Check } from 'lucide-react'
-import type { Parceiro, TipoParceiro } from '@/lib/db/tipos'
+import type { CodigoTamanho, Pagamento, Parceiro, TipoParceiro } from '@/lib/db/tipos'
 import { useSessao } from '@/lib/sessao'
 import { cx } from '@/lib/cx'
 import { useCadastros } from '@/lib/dados/cadastros'
@@ -31,40 +31,110 @@ export function Repasse() {
   const parceiros = useRegistros('parceiros')
   const estoque = useEstoque(hoje)
   const [parceiroId, setParceiroId] = useState<string | null>(params.get('parceiro'))
-  const [unidades, setUnidades] = useState(1)
+  const [unidadesPequeno, setUnidadesPequeno] = useState(tipo === 'ponto' ? 0 : 1)
+  const [unidadesGrande, setUnidadesGrande] = useState(tipo === 'ponto' ? 1 : 0)
+  const [pagamento, setPagamento] = useState<Pagamento>('pix')
   const [enviando, setEnviando] = useState(false)
 
-  const canal = cad.canal(tipo)
-  const tamanho = canal.tamanhoPadrao
-  const pecasPorUnidade = tipo === 'ponto' ? 24 : cad.pecasPorForma.pequeno
-  const total = unidades * pecasPorUnidade
-  const [mix, setMix] = useState(() => mixSortido(total, cad.sabores))
-  useEffect(() => setMix(mixSortido(total, cad.sabores)), [total, cad.sabores])
+  const pecasPequenoPorUnidade = cad.pecasPorForma.pequeno
+  const pecasGrandePorUnidade = tipo === 'ponto' ? 24 : cad.pecasPorForma.grande
+  const totalPequeno = unidadesPequeno * pecasPequenoPorUnidade
+  const totalGrande = unidadesGrande * pecasGrandePorUnidade
+
+  const [mixPequeno, setMixPequeno] = useState<Record<string, number>>(() => mixSortido(totalPequeno, cad.sabores))
+  const [mixGrande, setMixGrande] = useState<Record<string, number>>(() => mixSortido(totalGrande, cad.sabores))
+
+  useEffect(() => {
+    setMixPequeno(totalPequeno > 0 ? mixSortido(totalPequeno, cad.sabores) : {})
+  }, [totalPequeno, cad.sabores])
+
+  useEffect(() => {
+    setMixGrande(totalGrande > 0 ? mixSortido(totalGrande, cad.sabores) : {})
+  }, [totalGrande, cad.sabores])
 
   const lista = useMemo(() => (parceiros ?? [])
     .filter((p) => p.tipo === tipo && p.status !== 'saiu')
     .sort((a, b) => ORDEM_STATUS[a.status] - ORDEM_STATUS[b.status] || a.nome.localeCompare(b.nome, 'pt-BR')), [parceiros, tipo])
 
-  const preco = canal.precoPadrao ?? 0
-  const somaMix = Object.values(mix).reduce((s, v) => s + v, 0)
-  const lucro = Object.entries(mix).reduce((s, [saborId, qtd]) => s + qtd * (preco - (cad.tabela.variavel[saborId]?.[tamanho] ?? 0)), 0)
-  const precoInvalido = preco >= cad.config.precoFinalRevenda
-  const unidade = tipo === 'ponto' ? 'caixa' : 'forma'
+  const precoPequeno = cad.canal('vendedor')?.precoPadrao ?? 8
+  const precoGrande = cad.canal('ponto')?.precoPadrao ?? 10
+
+  const somaMixPequeno = Object.values(mixPequeno).reduce((s, v) => s + v, 0)
+  const somaMixGrande = Object.values(mixGrande).reduce((s, v) => s + v, 0)
+  const totalPecas = somaMixPequeno + somaMixGrande
+
+  const subtotalPequeno = somaMixPequeno * precoPequeno
+  const subtotalGrande = somaMixGrande * precoGrande
+  const totalValor = subtotalPequeno + subtotalGrande
+
+  const lucroPequeno = Object.entries(mixPequeno).reduce(
+    (s, [saborId, qtd]) => s + qtd * (precoPequeno - (cad.tabela.variavel[saborId]?.pequeno ?? 0)),
+    0,
+  )
+  const lucroGrande = Object.entries(mixGrande).reduce(
+    (s, [saborId, qtd]) => s + qtd * (precoGrande - (cad.tabela.variavel[saborId]?.grande ?? 0)),
+    0,
+  )
+  const lucroTotal = lucroPequeno + lucroGrande
+
+  const precoInvalido =
+    (totalPequeno > 0 && precoPequeno >= cad.config.precoFinalRevenda) ||
+    (totalGrande > 0 && precoGrande >= cad.config.precoFinalRevenda)
+
+  const mixPequenoIncompleto = totalPequeno > 0 && somaMixPequeno !== totalPequeno
+  const mixGrandeIncompleto = totalGrande > 0 && somaMixGrande !== totalGrande
+  const semPecas = totalPequeno === 0 && totalGrande === 0
+  const desabilitado = enviando || semPecas || mixPequenoIncompleto || mixGrandeIncompleto || precoInvalido
 
   async function registrar(parceiro: Parceiro) {
     setEnviando(true)
     try {
-      const itens = Object.entries(mix).filter(([, q]) => q > 0).map(([saborId, qtd]) => ({
-        saborId, tamanho, qtd, precoUnitario: preco, custoUnitario: cad.tabela.variavel[saborId]?.[tamanho] ?? 0,
-      }))
-      const vendaId = await registrarVenda({ canal: tipo, pagamento: 'pix', parceiroId: parceiro.id, itens }, {
-        horaViradaDia: cad.config.horaViradaDia, produtoPorId: cad.produtoPorId, diasMinimos: tipo === 'ponto' ? DIAS_MINIMOS_PONTO : 0,
-      })
-      mostrarToast(`Repasse a ${parceiro.nome}: ${somaMix} peças · ${reais(somaMix * preco)}`, {
+      const itens: Array<{ saborId: string; tamanho: CodigoTamanho; qtd: number; precoUnitario: number; custoUnitario: number }> = []
+
+      if (totalPequeno > 0) {
+        for (const [saborId, qtd] of Object.entries(mixPequeno)) {
+          if (qtd > 0) {
+            itens.push({
+              saborId,
+              tamanho: 'pequeno',
+              qtd,
+              precoUnitario: precoPequeno,
+              custoUnitario: cad.tabela.variavel[saborId]?.pequeno ?? 0,
+            })
+          }
+        }
+      }
+
+      if (totalGrande > 0) {
+        for (const [saborId, qtd] of Object.entries(mixGrande)) {
+          if (qtd > 0) {
+            itens.push({
+              saborId,
+              tamanho: 'grande',
+              qtd,
+              precoUnitario: precoGrande,
+              custoUnitario: cad.tabela.variavel[saborId]?.grande ?? 0,
+            })
+          }
+        }
+      }
+
+      const rotuloPagamento = pagamento === 'pix' ? 'Pix' : pagamento === 'dinheiro' ? 'Dinheiro' : 'Cartão'
+      const vendaId = await registrarVenda(
+        { canal: tipo, pagamento, parceiroId: parceiro.id, itens },
+        {
+          horaViradaDia: cad.config.horaViradaDia,
+          produtoPorId: cad.produtoPorId,
+          diasMinimos: tipo === 'ponto' ? DIAS_MINIMOS_PONTO : 0,
+        },
+      )
+
+      mostrarToast(`Repasse a ${parceiro.nome}: ${totalPecas} peças · ${reais(totalValor)} (${rotuloPagamento})`, {
         acao: { rotulo: 'Desfazer', fazer: () => void desfazerVenda(vendaId, cad.config.horaViradaDia) },
       })
       setParceiroId(null)
-      setUnidades(1)
+      setUnidadesPequeno(tipo === 'ponto' ? 0 : 1)
+      setUnidadesGrande(tipo === 'ponto' ? 1 : 0)
     } catch (e) {
       mostrarErro(e)
     } finally {
@@ -75,19 +145,38 @@ export function Repasse() {
   const escolhido = lista.find((p) => p.id === parceiroId)
 
   return (
-    <Tela titulo="Repasse a parceiro" voltar subtitulo="Parceiro → formas → Pix recebido">
-      <Abas abas={ABAS} ativa={tipo} aoMudar={(t) => { setParams({ tipo: t }, { replace: true }); setParceiroId(null); setUnidades(1) }} />
+    <Tela titulo="Repasse a parceiro" voltar subtitulo="Parceiro → formas/tamanhos → recebimento">
+      <Abas
+        abas={ABAS}
+        ativa={tipo}
+        aoMudar={(t) => {
+          setParams({ tipo: t }, { replace: true })
+          setParceiroId(null)
+          setUnidadesPequeno(t === 'ponto' ? 0 : 1)
+          setUnidadesGrande(t === 'ponto' ? 1 : 0)
+          setPagamento('pix')
+        }}
+      />
 
       <Secao titulo="Quem">
         {lista.length ? (
           <ul className="space-y-2" role="radiogroup" aria-label="Parceiro">
             {lista.map((p) => (
               <li key={p.id}>
-                <button type="button" role="radio" aria-checked={p.id === parceiroId} onClick={() => setParceiroId(p.id)}
-                  className={cx('flex min-h-14 w-full items-center gap-3 rounded-deco border px-4 text-left active:scale-[0.99]',
-                    p.id === parceiroId ? 'border-osso bg-grafite' : 'border-fio bg-carvao')}>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={p.id === parceiroId}
+                  onClick={() => setParceiroId(p.id)}
+                  className={cx(
+                    'flex min-h-14 w-full items-center gap-3 rounded-deco border px-4 text-left active:scale-[0.99]',
+                    p.id === parceiroId ? 'border-osso bg-grafite' : 'border-fio bg-carvao',
+                  )}
+                >
                   <span className="flex-1 font-bold">{p.nome}</span>
-                  {p.status !== 'ativo' && <span className="text-[13px] uppercase tracking-[0.08em] text-cinza">{p.status}</span>}
+                  {p.status !== 'ativo' && (
+                    <span className="text-[13px] uppercase tracking-[0.08em] text-cinza">{p.status}</span>
+                  )}
                   {p.id === parceiroId && <Check className="size-5" aria-hidden />}
                 </button>
               </li>
@@ -96,37 +185,172 @@ export function Repasse() {
         ) : (
           <Vazio>
             Nenhum {ABAS.find((a) => a.valor === tipo)?.rotulo.toLowerCase()} cadastrado.
-            {sessao.papel === 'dono' && <> <Link to={`/rede?aba=${tipo}`} className="underline">Cadastrar na Rede</Link>.</>}
+            {sessao.papel === 'dono' && (
+              <>
+                {' '}
+                <Link to={`/rede?aba=${tipo}`} className="underline">
+                  Cadastrar na Rede
+                </Link>
+                .
+              </>
+            )}
           </Vazio>
         )}
       </Secao>
 
       {escolhido && (
         <>
-          <Secao titulo={tipo === 'ponto' ? 'Caixas de 24' : `Formas de ${pecasPorUnidade}`}>
-            <div className="flex items-center justify-between">
-              <span className="text-cinza">{total} peças {tamanho === 'grande' ? 'grandes' : 'pequenas'}</span>
-              <Stepper rotulo={unidade} valor={unidades} min={1} max={20} aoMudar={setUnidades} />
+          <Secao titulo="Quantidades e tamanhos">
+            <div className="space-y-3">
+              <div className="rounded-deco border border-fio bg-carvao p-3.5 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <span className="font-bold text-base block text-osso">Peças Pequenas</span>
+                    <span className="text-[13px] text-cinza block">
+                      {unidadesPequeno} forma{unidadesPequeno !== 1 ? 's' : ''} ({totalPequeno} peças) · {reais(precoPequeno)}/peça
+                    </span>
+                  </div>
+                  <Stepper
+                    rotulo="Formas pequenas"
+                    valor={unidadesPequeno}
+                    min={0}
+                    max={20}
+                    aoMudar={setUnidadesPequeno}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-deco border border-fio bg-carvao p-3.5 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <span className="font-bold text-base block text-osso">Peças Grandes</span>
+                    <span className="text-[13px] text-cinza block">
+                      {unidadesGrande} {tipo === 'ponto' ? 'caixa' : 'forma'}{unidadesGrande !== 1 ? 's' : ''} ({totalGrande} peças) · {reais(precoGrande)}/peça
+                    </span>
+                  </div>
+                  <Stepper
+                    rotulo={tipo === 'ponto' ? 'Caixas grandes' : 'Formas grandes'}
+                    valor={unidadesGrande}
+                    min={0}
+                    max={20}
+                    aoMudar={setUnidadesGrande}
+                  />
+                </div>
+              </div>
             </div>
           </Secao>
-          <MixSabores total={total} mix={mix} aoMudar={setMix} sabores={cad.sabores} tamanho={tamanho} estoque={estoque?.saldoItem} />
 
-          {precoInvalido && <Aviso tom="alerta">Repasse igual ou acima do preço final ({reais(cad.config.precoFinalRevenda)}): o parceiro não tem margem.</Aviso>}
-          <div className="moldura bg-carvao p-4">
-            <p className="text-3xl font-bold">{reais(somaMix * preco)}</p>
-            <p className="text-cinza">{somaMix} × {reais(preco)} · à vista, no Pix</p>
+          {totalPequeno > 0 && (
+            <Secao titulo={`Mix — Brownies Pequenos (${somaMixPequeno} de ${totalPequeno})`}>
+              <MixSabores
+                total={totalPequeno}
+                mix={mixPequeno}
+                aoMudar={setMixPequeno}
+                sabores={cad.sabores}
+                tamanho="pequeno"
+                estoque={estoque?.saldoItem}
+              />
+            </Secao>
+          )}
+
+          {totalGrande > 0 && (
+            <Secao titulo={`Mix — Brownies Grandes (${somaMixGrande} de ${totalGrande})`}>
+              <MixSabores
+                total={totalGrande}
+                mix={mixGrande}
+                aoMudar={setMixGrande}
+                sabores={cad.sabores}
+                tamanho="grande"
+                estoque={estoque?.saldoItem}
+              />
+            </Secao>
+          )}
+
+          {semPecas && (
+            <Aviso tom="aviso">Selecione ao menos 1 forma de peças pequenas ou grandes acima.</Aviso>
+          )}
+
+          {precoInvalido && (
+            <Aviso tom="alerta">
+              Repasse igual ou acima do preço final ({reais(cad.config.precoFinalRevenda)}): o parceiro não tem margem.
+            </Aviso>
+          )}
+
+          <Secao titulo="Forma de pagamento">
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setPagamento('pix')}
+                className={cx(
+                  'flex min-h-12 flex-col items-center justify-center rounded-deco border text-center font-bold transition-all active:scale-[0.98] touch-manipulation',
+                  pagamento === 'pix'
+                    ? 'border-osso bg-osso text-tinta'
+                    : 'border-fio bg-carvao text-cinza hover:text-osso',
+                )}
+              >
+                <span className="text-[14px] sm:text-base">Pix</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPagamento('dinheiro')}
+                className={cx(
+                  'flex min-h-12 flex-col items-center justify-center rounded-deco border text-center font-bold transition-all active:scale-[0.98] touch-manipulation',
+                  pagamento === 'dinheiro'
+                    ? 'border-osso bg-osso text-tinta'
+                    : 'border-fio bg-carvao text-cinza hover:text-osso',
+                )}
+              >
+                <span className="text-[14px] sm:text-base">Dinheiro</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPagamento('maquininha')}
+                className={cx(
+                  'flex min-h-12 flex-col items-center justify-center rounded-deco border text-center font-bold transition-all active:scale-[0.98] touch-manipulation',
+                  pagamento === 'maquininha'
+                    ? 'border-osso bg-osso text-tinta'
+                    : 'border-fio bg-carvao text-cinza hover:text-osso',
+                )}
+              >
+                <span className="text-[14px] sm:text-base">Cartão</span>
+              </button>
+            </div>
+          </Secao>
+
+          <div className="moldura bg-carvao p-4 space-y-2">
+            <p className="text-3xl font-bold">{reais(totalValor)}</p>
+            <div className="text-cinza text-[14px] space-y-0.5">
+              {somaMixPequeno > 0 && (
+                <p>
+                  {somaMixPequeno} pequenas × {reais(precoPequeno)} = {reais(subtotalPequeno)}
+                </p>
+              )}
+              {somaMixGrande > 0 && (
+                <p>
+                  {somaMixGrande} grandes × {reais(precoGrande)} = {reais(subtotalGrande)}
+                </p>
+              )}
+              <p className="pt-1 text-osso font-semibold">
+                {totalPecas} peças no total · recebimento em{' '}
+                {pagamento === 'pix' ? 'Pix' : pagamento === 'dinheiro' ? 'Dinheiro' : 'Cartão'}
+              </p>
+            </div>
             {sessao.papel === 'dono' && (
-              <p className="mt-2 text-[15px]">
-                {unidades === 1 ? `Esta ${unidade} deixa` : `Estas ${unidades} ${unidade}s deixam`}{' '}
-                <strong className="text-verde">{reais(lucro)}</strong> para a Old Brownies.
+              <p className="mt-2 text-[15px] border-t border-fio pt-2">
+                Este repasse deixa <strong className="text-verde">{reais(lucroTotal)}</strong> para a Old Brownies.
               </p>
             )}
           </div>
-          <Botao bloco variante="ok" disabled={enviando || somaMix !== total || precoInvalido} onClick={() => registrar(escolhido)}>
-            <Check className="size-5" aria-hidden /> Pix recebido — registrar
+
+          <Botao bloco variante="ok" disabled={desabilitado} onClick={() => registrar(escolhido)}>
+            <Check className="size-5" aria-hidden />
+            {pagamento === 'pix' && 'Pix recebido — registrar'}
+            {pagamento === 'dinheiro' && 'Dinheiro recebido — registrar'}
+            {pagamento === 'maquininha' && 'Cartão aprovado — registrar'}
           </Botao>
         </>
       )}
     </Tela>
   )
 }
+
