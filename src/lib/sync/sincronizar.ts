@@ -89,6 +89,17 @@ export async function sincronizar() {
   rodando = true
   mudar({ sincronizando: true })
   try {
+    const { data: sessaoNuvem } = await nuvem.auth.getSession()
+    const nuvemUserId = sessaoNuvem?.session?.user?.id
+    if (nuvemUserId && sessao.userId !== nuvemUserId) {
+      const membro = await db.membros.get(sessao.membroId)
+      if (membro && membro.userId !== nuvemUserId) {
+        await db.membros.update(membro.id, { userId: nuvemUserId })
+        await db.outbox.add({ tabela: 'membros', registroId: membro.id, criadoEm: new Date().toISOString() })
+        sessao.userId = nuvemUserId
+      }
+    }
+
     await enviarFila()
     for (const tabela of TABELAS) await receberTabela(tabela, sessao.empresaId)
     mudar({ ultimoSync: new Date().toISOString(), erro: null })

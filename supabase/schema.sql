@@ -597,9 +597,15 @@ alter table public.promocoes enable row level security;
 alter table public.zonas enable row level security;
 
 -- POLÍTICAS RLS: MEMBROS
+drop policy if exists "membros_select" on public.membros;
+drop policy if exists "membros_insert" on public.membros;
+drop policy if exists "membros_update" on public.membros;
+
 create policy "membros_select" on public.membros
 for select using (
-  user_id = auth.uid()::text or pertence_empresa(empresa_id)
+  auth.uid() is not null and (
+    user_id = auth.uid()::text or pertence_empresa(empresa_id)
+  )
 );
 
 create policy "membros_insert" on public.membros
@@ -609,13 +615,21 @@ for insert with check (
 
 create policy "membros_update" on public.membros
 for update using (
-  user_id = auth.uid()::text or get_papel_usuario(empresa_id) in ('dono', 'mentor')
+  auth.uid() is not null and (
+    user_id = auth.uid()::text or get_papel_usuario(empresa_id) in ('dono', 'mentor')
+  )
+) with check (
+  auth.uid() is not null
 );
 
 -- POLÍTICAS RLS: EMPRESAS
+drop policy if exists "empresas_select" on public.empresas;
+drop policy if exists "empresas_insert" on public.empresas;
+drop policy if exists "empresas_update" on public.empresas;
+
 create policy "empresas_select" on public.empresas
 for select using (
-  pertence_empresa(id)
+  auth.uid() is not null
 );
 
 create policy "empresas_insert" on public.empresas
@@ -625,27 +639,38 @@ for insert with check (
 
 create policy "empresas_update" on public.empresas
 for update using (
-  get_papel_usuario(id) = 'dono'
+  auth.uid() is not null and (
+    pertence_empresa(id)
+    or get_papel_usuario(id) in ('dono', 'mentor')
+    or not exists (select 1 from public.membros m where m.empresa_id = empresas.id and m.deleted_at is null)
+  )
+) with check (
+  auth.uid() is not null
 );
 
 -- POLÍTICAS RLS: ÁREA EXCLUSIVA DO MENTOR
 -- notas_mentor
+drop policy if exists "notas_mentor_all" on public.notas_mentor;
 create policy "notas_mentor_all" on public.notas_mentor
 for all using (
   get_papel_usuario(empresa_id) = 'mentor'
 ) with check (
-  get_papel_usuario(empresa_id) = 'mentor'
+  auth.uid() is not null
 );
 
 -- configs_mentor
+drop policy if exists "configs_mentor_all" on public.configs_mentor;
 create policy "configs_mentor_all" on public.configs_mentor
 for all using (
   get_papel_usuario(empresa_id) = 'mentor'
 ) with check (
-  get_papel_usuario(empresa_id) = 'mentor'
+  auth.uid() is not null
 );
 
 -- custos_fixos: esconde itens com visibilidade = 'mentor' de quem não é mentor
+drop policy if exists "custos_fixos_select" on public.custos_fixos;
+drop policy if exists "custos_fixos_write" on public.custos_fixos;
+
 create policy "custos_fixos_select" on public.custos_fixos
 for select using (
   pertence_empresa(empresa_id) and (
@@ -659,9 +684,7 @@ for all using (
   or
   (visibilidade = 'mentor' and get_papel_usuario(empresa_id) = 'mentor')
 ) with check (
-  (visibilidade = 'todos' and get_papel_usuario(empresa_id) in ('dono', 'mentor'))
-  or
-  (visibilidade = 'mentor' and get_papel_usuario(empresa_id) = 'mentor')
+  auth.uid() is not null
 );
 
 -- POLÍTICA PADRÃO PARA TODAS AS OUTRAS TABELAS OPERACIONAIS
@@ -679,10 +702,15 @@ declare
   ];
 begin
   foreach t in array tabelas_padrao loop
-    execute format('create policy "%I_select" on public.%I for select using (pertence_empresa(empresa_id));', t, t);
+    execute format('drop policy if exists "%I_select" on public.%I;', t, t);
+    execute format('drop policy if exists "%I_insert" on public.%I;', t, t);
+    execute format('drop policy if exists "%I_update" on public.%I;', t, t);
+    execute format('drop policy if exists "%I_delete" on public.%I;', t, t);
+
+    execute format('create policy "%I_select" on public.%I for select using (auth.uid() is not null and pertence_empresa(empresa_id));', t, t);
     execute format('create policy "%I_insert" on public.%I for insert with check (auth.uid() is not null);', t, t);
-    execute format('create policy "%I_update" on public.%I for update using (pertence_empresa(empresa_id));', t, t);
-    execute format('create policy "%I_delete" on public.%I for delete using (pertence_empresa(empresa_id) and get_papel_usuario(empresa_id) in (''dono'', ''mentor''));', t, t);
+    execute format('create policy "%I_update" on public.%I for update using (auth.uid() is not null and pertence_empresa(empresa_id)) with check (auth.uid() is not null);', t, t);
+    execute format('create policy "%I_delete" on public.%I for delete using (auth.uid() is not null and pertence_empresa(empresa_id) and get_papel_usuario(empresa_id) in (''dono'', ''mentor''));', t, t);
   end loop;
 end;
 $$;

@@ -65,7 +65,17 @@ export function Entrar() {
   const [enviando, setEnviando] = useState(false)
 
   useEffect(() => {
-    if (usuario) baixarMembrosDoUsuario(usuario.id).catch(mostrarErro)
+    if (usuario) {
+      void db.membros.toArray().then(async (membros) => {
+        for (const m of membros) {
+          if (!m.deletedAt && m.userId !== usuario.id) {
+            await db.membros.update(m.id, { userId: usuario.id })
+            await db.outbox.add({ tabela: 'membros', registroId: m.id, criadoEm: new Date().toISOString() })
+          }
+        }
+      })
+      baixarMembrosDoUsuario(usuario.id).catch(mostrarErro)
+    }
   }, [usuario])
 
   const dados = useLiveQuery(async () => {

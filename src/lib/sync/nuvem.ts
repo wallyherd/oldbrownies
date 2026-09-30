@@ -1,8 +1,8 @@
 // Nuvem opcional (Supabase / Lovable Cloud). Sem as variáveis, o app roda só no aparelho.
 import { createClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const chave = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim()
+const chave = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim()
 
 export const nuvem = url && chave ? createClient(url, chave, { auth: { persistSession: true } }) : null
 
