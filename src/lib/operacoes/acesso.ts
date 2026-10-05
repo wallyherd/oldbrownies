@@ -6,7 +6,7 @@ import { definirSessao, exigirSessao, sessaoAtual } from '@/lib/sessao'
 import { atualizar, gravar, gravarSemSessao, novoId, op } from '@/lib/sync/gravar'
 import { nuvem } from '@/lib/sync/nuvem'
 import { sairDaNuvem } from '@/lib/sync/auth'
-import { puxarTudoDeNovo } from '@/lib/sync/sincronizar'
+import { puxarTudoDeNovo, sincronizar } from '@/lib/sync/sincronizar'
 
 const VALIDADE_CONVITE_DIAS = 7
 const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // sem 0/O, 1/I
@@ -16,6 +16,7 @@ export function entrarComo(membro: Membro, email?: string) {
   definirSessao({
     userId: membro.userId, membroId: membro.id, nome: membro.nome, papel: membro.papel, empresaId: membro.empresaId, email,
   })
+  void sincronizar()
 }
 
 export async function criarEmpresaEEntrar(p: { nomeEmpresa: string; nome: string; papel: 'dono' | 'mentor'; userId?: string; email?: string }) {

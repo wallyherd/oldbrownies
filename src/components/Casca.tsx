@@ -7,7 +7,6 @@ import {
 import type { Papel } from '@/lib/db/tipos'
 import { useSessao } from '@/lib/sessao'
 import { cx } from '@/lib/cx'
-import { iniciarSincronizacao } from '@/lib/sync/sincronizar'
 import { registrarAcesso } from '@/lib/operacoes/acesso'
 import { IndicadorSync } from './IndicadorSync'
 import { Toasts } from './ui/Toast'
@@ -45,7 +44,6 @@ export function Casca({ children }: { children: ReactNode }) {
   const sessao = useSessao()
   const { pathname } = useLocation()
 
-  useEffect(() => iniciarSincronizacao(), [])
   useEffect(() => { void registrarAcesso() }, [sessao.membroId])
 
   const mostrarVenda = sessao.papel === 'dono' && !SEM_BOTAO_VENDA.some((p) => pathname.startsWith(p))

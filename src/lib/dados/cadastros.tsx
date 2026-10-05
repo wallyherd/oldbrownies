@@ -9,6 +9,7 @@ import { lucroPorPeca, precoMedioLoja, taxaDoCanal, type TaxasCanal } from '@/li
 import { dataLocal, diasEntre, somarDias } from '@/lib/motor/dia'
 import { lerDaEmpresa } from './consultas'
 import { ContextoCadastros } from './contexto'
+import { CONFIG as CONFIG_PADRAO } from '@/lib/db/sementes'
 
 export interface Cadastros {
   empresa: T.Empresa
@@ -73,31 +74,42 @@ const ORDEM_CANAIS: T.CodigoCanal[] = ['loja', 'rota', 'feira', 'evento', 'ifood
 const ordemSabor = (a: T.Sabor, b: T.Sabor) => b.pesoMix - a.pesoMix || a.nome.localeCompare(b.nome, 'pt-BR')
 
 function montar(b: Brutos, papel: T.Papel): Cadastros | null {
-  if (!b.empresa || !b.config) return null
+  if (!b.empresa) return null
+  const empresa = b.empresa
+  const config = b.config ?? (CONFIG_PADRAO as unknown as T.Config)
   // Custos com visibilidade "mentor" (DAS, contador) só existem na visão do mentor.
   const custosFixos = b.custosFixos.filter((c) => c.visibilidade === 'todos' || papel === 'mentor')
-  const config = b.config
   const pecasPorForma = { pequeno: 35, grande: 24 }
   for (const t of b.tamanhos) pecasPorForma[t.codigo] = t.pecasPorForma
   const sabores = [...b.sabores].sort(ordemSabor)
   const produtos = [...b.produtos].sort((x, y) => (x.ordem ?? 999) - (y.ordem ?? 999) || x.nome.localeCompare(y.nome, 'pt-BR'))
   const canais = [...b.canais].sort((x, y) => ORDEM_CANAIS.indexOf(x.codigo) - ORDEM_CANAIS.indexOf(y.codigo))
   const custosOrdenados = custosFixos.sort((x, y) => y.valorMensal - x.valorMensal)
+  const formasMedia = formasPorSemana(b.producoes, b.producaoItens, dataLocal(new Date()))
   const tabela = calcularCustos({
     insumos: b.insumos, compras: b.compras, sabores: sabores.filter((s) => s.ativo), receitas: b.receitas,
-    pecasPorForma, config, formasSemana: formasPorSemana(b.producoes, b.producaoItens, dataLocal(new Date())),
+    pecasPorForma, config, formasSemana: isNaN(formasMedia) || formasMedia <= 0 ? FORMAS_SEM_HISTORICO : formasMedia,
   })
-  const taxas = { taxaMaquininha: config.taxaMaquininha, comissaoIfood: config.comissaoIfood }
+  const taxas = { taxaMaquininha: config.taxaMaquininha ?? 0.023, comissaoIfood: config.comissaoIfood ?? null }
   const canalPorCodigo = new Map(canais.map((c) => [c.codigo, c]))
-  const canal = (codigo: T.CodigoCanal) => canalPorCodigo.get(codigo)!
+  const canal = (codigo: T.CodigoCanal) => canalPorCodigo.get(codigo) ?? {
+    id: codigo, empresaId: empresa.id, codigo, nome: codigo, precoPadrao: 0, tamanhoPadrao: 'pequeno',
+    createdAt: '', updatedAt: '', updatedBy: '', deletedAt: null,
+  } as T.Canal
   const medio = precoMedioLoja(produtos, sabores)
   const lucroPecaCanal = (codigo: T.CodigoCanal, preco?: number) => {
     const c = canal(codigo)
     const p = preco ?? c?.precoPadrao ?? medio
-    return lucroPorPeca(p, taxaDoCanal(codigo, taxas), tabela.variavelMix[c?.tamanhoPadrao ?? 'pequeno'])
+    const tam = c?.tamanhoPadrao ?? 'pequeno'
+    const varMix = tabela.variavelMix[tam] ?? tabela.variavelMix.pequeno ?? 0
+    return lucroPorPeca(p, taxaDoCanal(codigo, taxas), varMix)
   }
+  const inicioUso = b.empresa.createdAt && !isNaN(Date.parse(b.empresa.createdAt))
+    ? dataLocal(new Date(b.empresa.createdAt))
+    : dataLocal(new Date())
+
   return {
-    empresa: b.empresa, inicioUso: dataLocal(new Date(b.empresa.createdAt)), config, sabores, saborPorId: new Map(sabores.map((s) => [s.id, s])), pecasPorForma,
+    empresa: b.empresa, inicioUso, config, sabores, saborPorId: new Map(sabores.map((s) => [s.id, s])), pecasPorForma,
     insumos: b.insumos, compras: b.compras, receitas: b.receitas,
     produtos, produtoPorId: new Map(produtos.map((p) => [p.id, p])),
     canais, canal, custosFixos: custosOrdenados, promocoes: b.promocoes, zonas: b.zonas,

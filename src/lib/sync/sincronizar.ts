@@ -56,14 +56,30 @@ async function enviarFila() {
   }
 }
 
+const TABELAS_CADASTRO: NomeTabela[] = [
+  'empresas', 'configs', 'sabores', 'tamanhos', 'insumos', 'compras',
+  'receitaItens', 'produtos', 'canais', 'custosFixos', 'promocoes', 'zonas',
+]
+const TABELAS_ORDENADAS: NomeTabela[] = [
+  ...TABELAS_CADASTRO,
+  ...TABELAS.filter((t) => !TABELAS_CADASTRO.includes(t)),
+]
+
 async function receberTabela(tabela: NomeTabela, empresaId: string) {
   if (!nuvem) return
   const chaveCursor = `cursor:${empresaId}:${tabela}`
   let cursor = ((await db.meta.get(chaveCursor))?.valor as string | undefined) ?? '1970-01-01T00:00:00Z'
   for (;;) {
-    const { data, error } = await nuvem.from(paraSnake(tabela)).select('*')
-      .eq('empresa_id', empresaId).gt('updated_at', cursor)
-      .order('updated_at').limit(LOTE_RECEBIMENTO)
+    let consulta = nuvem.from(paraSnake(tabela)).select('*')
+    if (tabela === 'empresas') {
+      consulta = consulta.or(`id.eq.${empresaId},empresa_id.eq.${empresaId}`)
+    } else {
+      consulta = consulta.eq('empresa_id', empresaId)
+    }
+    const { data, error } = await consulta
+      .gt('updated_at', cursor)
+      .order('updated_at')
+      .limit(LOTE_RECEBIMENTO)
     if (error) throw new Error(`${tabela}: ${error.message}`)
     if (!data?.length) return
     const pendentes = new Set((await db.outbox.where('tabela').equals(tabela).toArray()).map((o) => o.registroId))
@@ -101,8 +117,19 @@ export async function sincronizar() {
     }
 
     await enviarFila()
-    for (const tabela of TABELAS) await receberTabela(tabela, sessao.empresaId)
-    mudar({ ultimoSync: new Date().toISOString(), erro: null })
+    const erros: string[] = []
+    for (const tabela of TABELAS_ORDENADAS) {
+      try {
+        await receberTabela(tabela, sessao.empresaId)
+      } catch (err) {
+        erros.push(`${tabela}: ${err instanceof Error ? err.message : String(err)}`)
+      }
+    }
+    if (erros.length > 0) {
+      mudar({ erro: erros.join('; ') })
+    } else {
+      mudar({ ultimoSync: new Date().toISOString(), erro: null })
+    }
   } catch (e) {
     mudar({ erro: e instanceof Error ? e.message : String(e) })
   } finally {

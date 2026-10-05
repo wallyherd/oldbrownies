@@ -1,8 +1,10 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import type { Papel } from '@/lib/db/tipos'
 import { useSessaoOpcional } from '@/lib/sessao'
 import { CadastrosProvider } from '@/lib/dados/cadastros'
+import { iniciarSincronizacao, puxarTudoDeNovo, sincronizar, useEstadoSync } from '@/lib/sync/sincronizar'
+import { sair } from '@/lib/operacoes/acesso'
 import { Casca } from '@/components/Casca'
 import { Entrar } from '@/features/entrar/Entrar'
 import { Hoje } from '@/features/hoje/Hoje'
@@ -32,7 +34,72 @@ const TODOS: Papel[] = ['dono', 'mentor', 'equipe']
 const GESTAO: Papel[] = ['dono', 'mentor']
 
 function Carregando() {
-  return <p className="p-8 text-center text-cinza">Abrindo a empresa…</p>
+  const sessao = useSessaoOpcional()
+  const estado = useEstadoSync()
+  const [demorou, setDemorou] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => setDemorou(true), 4000)
+    return () => clearTimeout(t)
+  }, [])
+
+  return (
+    <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-12 text-center">
+      <div className="size-10 animate-spin rounded-full border-2 border-ouro border-t-transparent" aria-hidden />
+      <p className="mt-4 font-bold text-osso text-lg">Abrindo a empresa…</p>
+      
+      {estado.sincronizando && (
+        <p className="mt-1 text-[13px] text-cinza">Sincronizando dados com a nuvem…</p>
+      )}
+
+      {estado.erro && (
+        <div className="mt-6 max-w-sm rounded-deco border border-vermelho/40 bg-vermelho/10 p-4 text-left">
+          <p className="text-[13px] font-bold text-vermelho">Aviso de sincronização:</p>
+          <p className="mt-1 text-xs text-cinza line-clamp-3">{estado.erro}</p>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => void sincronizar()}
+              className="rounded-deco bg-ouro px-3 py-1.5 text-xs font-bold text-carvao active:scale-95"
+            >
+              Tentar novamente
+            </button>
+            <button
+              type="button"
+              onClick={() => sair()}
+              className="rounded-deco border border-fio bg-carvao px-3 py-1.5 text-xs text-osso active:scale-95"
+            >
+              Voltar ao login
+            </button>
+          </div>
+        </div>
+      )}
+
+      {demorou && !estado.erro && (
+        <div className="mt-6 max-w-xs space-y-2">
+          <p className="text-xs text-cinza">A conexão está demorando mais do que o esperado.</p>
+          <div className="flex justify-center gap-2">
+            {sessao && (
+              <button
+                type="button"
+                onClick={() => void puxarTudoDeNovo(sessao.empresaId)}
+                className="rounded-deco border border-fio bg-carvao px-3 py-1.5 text-xs font-bold text-ouro active:scale-95"
+              >
+                Forçar sincronização
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => sair()}
+              className="rounded-deco border border-fio bg-carvao px-3 py-1.5 text-xs text-cinza active:scale-95"
+            >
+              Trocar de conta
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function Permitido({ papeis, children }: { papeis: Papel[]; children: ReactNode }) {
@@ -66,6 +133,8 @@ const ROTAS: Array<{ caminho: string; papeis: Papel[]; tela: ReactNode }> = [
 ]
 
 function AreaLogada() {
+  useEffect(() => iniciarSincronizacao(), [])
+
   return (
     <CadastrosProvider carregando={<Carregando />}>
       <Casca>
