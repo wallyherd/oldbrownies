@@ -15,12 +15,11 @@ const PAPEL_ROTULO = { dono: 'dono', mentor: 'mentor', equipe: 'equipe', parceir
 
 function Marca() {
   return (
-    <div className="py-10 text-center">
-      <div className="filete-duplo mx-auto mb-5 w-24" aria-hidden />
-      <p className="font-titulo text-4xl font-bold tracking-[0.12em]">OLD</p>
-      <p className="font-titulo text-4xl font-bold tracking-[0.12em]">BROWNIES</p>
-      <p className="mt-3 text-[13px] uppercase tracking-[0.32em] text-cinza">Brownies artesanais · Cuiabá</p>
-      <div className="filete-duplo mx-auto mt-5 w-24" aria-hidden />
+    <div className="py-8 text-center">
+      <img src="/pwa-192x192.png" alt="Old Brownies" className="mx-auto size-28 rounded-full border border-ouro/40 mb-4 shadow-xl" />
+      <p className="font-titulo text-3xl font-bold tracking-[0.12em]">OLD BROWNIES</p>
+      <p className="mt-2 text-[12px] uppercase tracking-[0.3em] text-cinza">Cafeteria · Cuiabá</p>
+      <div className="filete-duplo mx-auto mt-4 w-24" aria-hidden />
     </div>
   )
 }

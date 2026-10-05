@@ -52,7 +52,10 @@ export function Casca({ children }: { children: ReactNode }) {
     <div className="min-h-dvh">
       <div className="sticky top-0 z-30 border-b border-fio bg-tinta/95 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur-sm">
         <div className="mx-auto flex h-11 max-w-[30rem] items-center justify-between px-4">
-          <span className="font-titulo text-[13px] font-bold tracking-[0.32em]">OLD BROWNIES</span>
+          <div className="flex items-center gap-2">
+            <img src="/pwa-64x64.png" alt="" className="size-6 rounded-full border border-ouro/40" />
+            <span className="font-titulo text-[13px] font-bold tracking-[0.32em]">OLD BROWNIES</span>
+          </div>
           <IndicadorSync />
         </div>
       </div>
