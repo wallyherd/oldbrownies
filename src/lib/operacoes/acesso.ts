@@ -91,5 +91,7 @@ export function sair() {
 export async function sairDaConta() {
   sair()
   await sairDaNuvem()
+  await db.delete()
+  window.location.href = '/'
 }
 

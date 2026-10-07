@@ -65,14 +65,6 @@ export function Entrar() {
 
   useEffect(() => {
     if (usuario) {
-      void db.membros.toArray().then(async (membros) => {
-        for (const m of membros) {
-          if (!m.deletedAt && m.userId !== usuario.id) {
-            await db.membros.update(m.id, { userId: usuario.id })
-            await db.outbox.add({ tabela: 'membros', registroId: m.id, criadoEm: new Date().toISOString() })
-          }
-        }
-      })
       baixarMembrosDoUsuario(usuario.id).catch(mostrarErro)
     }
   }, [usuario])
