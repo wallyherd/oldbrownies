@@ -8,6 +8,7 @@ export interface Registros {
   convites: T.Convite
   configs: T.Config
   insumos: T.Insumo
+  listaCompras: T.ListaCompra
   compras: T.Compra
   sabores: T.Sabor
   receitaItens: T.ReceitaItem
@@ -58,6 +59,7 @@ const INDICES: Record<NomeTabela, string> = {
   convites: `${COMUM}, codigo`,
   configs: COMUM,
   insumos: COMUM,
+  listaCompras: `${COMUM}, insumoId`,
   compras: `${COMUM}, insumoId`,
   sabores: COMUM,
   receitaItens: `${COMUM}, saborId`,

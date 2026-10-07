@@ -71,6 +71,14 @@ export interface Insumo extends Base {
   observacao?: string
 }
 
+export interface ListaCompra extends Base {
+  insumoId: string
+  quantidadeNecessaria: number
+  concluido: boolean
+  valorPago: number | null
+  compradoPor: string | null
+}
+
 export interface Compra extends Base {
   data: string
   insumoId: string

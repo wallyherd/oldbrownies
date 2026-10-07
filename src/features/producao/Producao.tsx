@@ -44,6 +44,7 @@ export function Producao() {
   const [responsavel, setResponsavel] = useState('Maria Eduarda')
   const [diaria, setDiaria] = useState(String(cad.config.diariaProducao))
   const [formas, setFormas] = useState<Formas>({})
+  const [meioAMeio, setMeioAMeio] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const podeLancar = sessao.papel !== 'mentor'
 
@@ -78,7 +79,9 @@ export function Producao() {
 
   const passo = (saborId: string, tamanho: CodigoTamanho) => {
     const chave = `${saborId}|${tamanho}`
-    return <Stepper compacto rotulo={`formas de ${cad.saborPorId.get(saborId)?.nome} ${tamanho}`} valor={formas[chave] ?? 0} max={cad.config.capacidadeJornada}
+    // Permitir passo 0.5 se meio a meio ativo, mas arredondar caso desativem o toggle e o valor seja quebrado?
+    // O Stepper aceita passo fracionado e vai somar corretamete.
+    return <Stepper compacto rotulo={`formas de ${cad.saborPorId.get(saborId)?.nome} ${tamanho}`} valor={formas[chave] ?? 0} max={cad.config.capacidadeJornada} passo={meioAMeio ? 0.5 : 1}
       aoMudar={(v) => setFormas({ ...formas, [chave]: v })} />
   }
 
@@ -93,6 +96,13 @@ export function Producao() {
           <Campo rotulo="Quem produziu" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
 
           <Secao titulo="Formas por sabor">
+            <div className="mb-4 flex items-center justify-between rounded-deco border border-fio bg-grafite/30 px-4 py-3">
+              <span className="font-medium">Permitir meia forma (meio a meio)</span>
+              <button type="button" role="switch" aria-checked={meioAMeio} onClick={() => setMeioAMeio(!meioAMeio)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${meioAMeio ? 'bg-primary' : 'bg-cinza/50'}`}>
+                <span className={`inline-block size-4 transform rounded-full bg-white transition-transform ${meioAMeio ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
             <ul className="divide-y divide-fio border-y border-fio">
               {cad.sabores.filter((s) => s.ativo).map((s) => (
                 <li key={s.id} className="py-3">

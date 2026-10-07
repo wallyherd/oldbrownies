@@ -21,6 +21,7 @@ import { Placar } from '@/features/placar/Placar'
 import { Painel } from '@/features/mentor/Painel'
 import { AreaPrivada } from '@/features/mentor/AreaPrivada'
 import { Mais } from '@/features/mais/Mais'
+import { ListaCompras } from '@/features/compras/ListaCompras'
 import { Custos } from '@/features/mais/Custos'
 import { Produtos } from '@/features/mais/Produtos'
 import { CustosFixos } from '@/features/mais/CustosFixos'
@@ -123,6 +124,7 @@ const ROTAS: Array<{ caminho: string; papeis: Papel[]; tela: ReactNode }> = [
   { caminho: '/placar', papeis: GESTAO, tela: <Placar /> },
   { caminho: '/painel', papeis: ['mentor'], tela: <Painel /> },
   { caminho: '/privado', papeis: ['mentor'], tela: <AreaPrivada /> },
+  { caminho: '/compras', papeis: TODOS, tela: <ListaCompras /> },
   { caminho: '/mais', papeis: TODOS, tela: <Mais /> },
   { caminho: '/mais/custos', papeis: GESTAO, tela: <Custos /> },
   { caminho: '/mais/produtos', papeis: TODOS, tela: <Produtos /> },

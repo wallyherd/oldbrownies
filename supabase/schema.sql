@@ -112,6 +112,21 @@ create table if not exists public.compras (
   deleted_at timestamptz
 );
 
+-- 6.5. LISTA_COMPRAS
+create table if not exists public.lista_compras (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null,
+  insumo_id uuid not null,
+  quantidade_necessaria numeric not null,
+  concluido boolean not null default false,
+  valor_pago numeric,
+  comprado_por text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by text not null default '',
+  deleted_at timestamptz
+);
+
 -- 7. SABORES
 create table if not exists public.sabores (
   id uuid primary key default gen_random_uuid(),
@@ -506,7 +521,7 @@ do $$
 declare
   t text;
   tabelas text[] := array[
-    'empresas', 'membros', 'convites', 'configs', 'insumos', 'compras', 'sabores',
+    'empresas', 'membros', 'convites', 'configs', 'insumos', 'compras', 'lista_compras', 'sabores',
     'receita_itens', 'tamanhos', 'produtos', 'producoes', 'producao_itens', 'lotes',
     'movimentos', 'canais', 'vendas', 'venda_itens', 'parceiros', 'visitas_ponto',
     'perdas', 'amostras', 'contagens', 'custos_fixos', 'rotina_tarefas',
@@ -526,7 +541,7 @@ do $$
 declare
   t text;
   tabelas text[] := array[
-    'empresas', 'membros', 'convites', 'configs', 'insumos', 'compras', 'sabores',
+    'empresas', 'membros', 'convites', 'configs', 'insumos', 'compras', 'lista_compras', 'sabores',
     'receita_itens', 'tamanhos', 'produtos', 'producoes', 'producao_itens', 'lotes',
     'movimentos', 'canais', 'vendas', 'venda_itens', 'parceiros', 'visitas_ponto',
     'perdas', 'amostras', 'contagens', 'custos_fixos', 'rotina_tarefas',
@@ -570,6 +585,7 @@ alter table public.convites enable row level security;
 alter table public.configs enable row level security;
 alter table public.insumos enable row level security;
 alter table public.compras enable row level security;
+alter table public.lista_compras enable row level security;
 alter table public.sabores enable row level security;
 alter table public.receita_itens enable row level security;
 alter table public.tamanhos enable row level security;
@@ -694,7 +710,7 @@ do $$
 declare
   t text;
   tabelas_padrao text[] := array[
-    'convites', 'configs', 'insumos', 'compras', 'sabores', 'receita_itens',
+    'convites', 'configs', 'insumos', 'compras', 'lista_compras', 'sabores', 'receita_itens',
     'tamanhos', 'produtos', 'producoes', 'producao_itens', 'lotes', 'movimentos',
     'canais', 'vendas', 'venda_itens', 'parceiros', 'visitas_ponto', 'perdas',
     'amostras', 'contagens', 'rotina_tarefas', 'tarefas_avulsas', 'checklist_itens',

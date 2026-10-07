@@ -19,6 +19,7 @@ const GRUPOS: Array<{ titulo: string; itens: Item[] }> = [
       { para: '/checklist', rotulo: 'Checklist da semana', papeis: ['dono', 'equipe'] },
       { para: '/placar', rotulo: 'Placar da semana', papeis: ['dono'] },
       { para: '/producao', rotulo: 'Produção', papeis: ['dono', 'mentor'] },
+      { para: '/compras', rotulo: 'Lista de Compras', papeis: ['dono', 'equipe', 'mentor'] },
       { para: '/estoque', rotulo: 'Estoque', papeis: ['mentor'] },
       { para: '/visita', rotulo: 'Visita ao ponto', papeis: ['dono'] },
       { para: '/repasse', rotulo: 'Repasse a parceiro', papeis: ['dono', 'equipe'] },
