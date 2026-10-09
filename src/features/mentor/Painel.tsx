@@ -11,6 +11,7 @@ import { placar, resultadoDoMes } from '@/lib/dados/indicadores'
 import { cumprimento } from '@/lib/motor/checklist'
 import { inicioMes, inicioSemana, somarDias } from '@/lib/motor/dia'
 import { dataHora, numero, pct, reais } from '@/lib/formato'
+import { alertasFuncionario } from '@/lib/motor/funcionario'
 import { entrarComo } from '@/lib/operacoes/acesso'
 import { temNuvem } from '@/lib/sync/sincronizar'
 import { Aviso, Barra, Numero } from '@/components/ui/basicos'
@@ -104,6 +105,18 @@ export function Painel() {
           </div>
         ) : <div className="mt-3"><Aviso tom="ok">O mês já pagou loja, empresa, vida e dívida.</Aviso></div>}
       </Secao>
+
+      {cad.funcionarios.length > 0 && (
+        <Secao titulo="Equipe">
+          <ul className="space-y-2">
+            {alertasFuncionario(cad.funcionarios, hoje).map((a) => (
+              <li key={a.texto}>
+                <Link to={a.link} className="block"><Aviso tom={a.tom}>{a.texto}</Aviso></Link>
+              </li>
+            ))}
+          </ul>
+        </Secao>
+      )}
 
       <Secao titulo="Operação">
         <div className="border-t border-fio">

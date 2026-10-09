@@ -26,6 +26,8 @@ import { Custos } from '@/features/mais/Custos'
 import { Produtos } from '@/features/mais/Produtos'
 import { CustosFixos } from '@/features/mais/CustosFixos'
 import { Configuracoes } from '@/features/mais/Configuracoes'
+import { Equipe } from '@/features/mais/Equipe'
+import { IfoodMetricas } from '@/features/mais/IfoodMetricas'
 import { Convites } from '@/features/mais/Convites'
 import { Dados } from '@/features/mais/Dados'
 
@@ -115,7 +117,7 @@ const ROTAS: Array<{ caminho: string; papeis: Papel[]; tela: ReactNode }> = [
   { caminho: '/checklist', papeis: TODOS, tela: <ChecklistSemana /> },
   { caminho: '/checklist/editar', papeis: ['dono'], tela: <EditarRotina /> },
   { caminho: '/vender', papeis: ['dono', 'equipe'], tela: <Vender /> },
-  { caminho: '/repasse', papeis: ['dono', 'equipe'], tela: <Repasse /> },
+  { caminho: '/repasse', papeis: ['dono'], tela: <Repasse /> },
   { caminho: '/visita', papeis: ['dono'], tela: <VisitaPonto /> },
   { caminho: '/producao', papeis: TODOS, tela: <Producao /> },
   { caminho: '/estoque', papeis: TODOS, tela: <Estoque /> },
@@ -130,6 +132,8 @@ const ROTAS: Array<{ caminho: string; papeis: Papel[]; tela: ReactNode }> = [
   { caminho: '/mais/produtos', papeis: TODOS, tela: <Produtos /> },
   { caminho: '/mais/fixos', papeis: GESTAO, tela: <CustosFixos /> },
   { caminho: '/mais/configuracoes', papeis: GESTAO, tela: <Configuracoes /> },
+  { caminho: '/mais/equipe', papeis: GESTAO, tela: <Equipe /> },
+  { caminho: '/mais/ifood', papeis: GESTAO, tela: <IfoodMetricas /> },
   { caminho: '/mais/convites', papeis: GESTAO, tela: <Convites /> },
   { caminho: '/mais/dados', papeis: TODOS, tela: <Dados /> },
 ]

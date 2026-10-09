@@ -16,7 +16,7 @@ export type CodigoCanal = 'loja' | 'rota' | 'feira' | 'evento' | 'ifood' | 'vend
 export type Pagamento = 'dinheiro' | 'pix' | 'maquininha'
 export type TipoParceiro = 'vendedor' | 'motorista' | 'ponto'
 export type StatusParceiro = 'candidato' | 'treino' | 'teste' | 'ativo' | 'pausado' | 'saiu'
-export type TipoTarefa = 'escola' | 'mensagem' | 'operacao' | 'captacao' | 'feira' | 'rota' | 'preparo'
+export type TipoTarefa = 'escola' | 'mensagem' | 'operacao' | 'captacao' | 'feira' | 'rota' | 'preparo' | 'ifood' | 'mentalidade' | 'esforco'
 export type TipoMovimento =
   | 'producao' | 'venda' | 'repasse' | 'troca_saida' | 'troca_volta'
   | 'consignado_saida' | 'consignado_volta' | 'perda' | 'amostra' | 'ajuste_contagem'
@@ -50,6 +50,14 @@ export interface Convite extends Base {
 export interface Config extends Base {
   taxaMaquininha: number
   comissaoIfood: number | null
+  embalagemIfood: number
+  mensalidadeIfood: number
+  limiteMensalidadeIfood: number
+  repasseIfood: 'semanal' | 'mensal'
+  encargosFolha: number
+  fatorDsr: number
+  tarifaOnibus: number
+  salarioMinimo: number
   diasValidade: number
   diasMaxNoPonto: number
   semanasPorMes: number
@@ -121,6 +129,8 @@ export interface Produto extends Base {
   composicao?: ItemComposicao[]
   observacao?: string
   ifood?: boolean
+  vendeNoIfood?: boolean
+  obsIfood?: string
   ordem?: number
 }
 
@@ -232,6 +242,41 @@ export interface Amostra extends Base {
 export interface Contagem extends Base {
   data: string
   itens: Array<{ loteId: string | null; saborId: string; tamanho: CodigoTamanho; contado: number; sistema: number }>
+}
+
+export interface Funcionario extends Base {
+  membroId: string
+  nome: string
+  admissao: string
+  fimExperiencia: string // admissao + 59 dias
+  fase: 'experiencia' | 'nivel1' | 'nivel2' | 'nivel3'
+  faseDesde: string
+  usaVT: boolean
+  viagensDia: number // 2
+  diasMesVT: number // 26
+  obs?: string
+}
+
+export interface MudancaFase extends Base {
+  funcionarioId: string
+  data: string
+  de: string
+  para: string
+  motivo: 'fim_experiencia' | 'antecipacao' | 'criterio' | 'outro'
+  registradoPor: string
+}
+
+export interface MetricasIfood extends Base {
+  dataReferencia: string // O domingo da semana avaliada (ISO)
+  nota: number
+}
+
+export interface Cancelamento extends Base {
+  data: string
+  vendaId?: string
+  motivo: string
+  culpa: 'loja' | 'motoboy' | 'app'
+  registradoPor: string
 }
 
 export type GrupoCusto = 'ponto' | 'empresa' | 'pessoal' | 'divida'

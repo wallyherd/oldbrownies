@@ -65,9 +65,17 @@ create table if not exists public.configs (
   empresa_id uuid not null,
   taxa_maquininha numeric default 0,
   comissao_ifood numeric,
+  embalagem_ifood numeric default 1,
+  mensalidade_ifood numeric default 150,
+  limite_mensalidade_ifood numeric default 1800,
+  repasse_ifood text default 'semanal',
+  encargos_folha numeric default 1.30,
+  fator_dsr numeric default 0.20,
+  tarifa_onibus numeric default 5.80,
+  salario_minimo numeric default 1412,
   dias_validade int default 10,
   dias_max_no_ponto int default 7,
-  semanas_por_mes numeric default 4.33,
+  semanas_por_mes numeric default 4.333,
   diaria_producao numeric default 0,
   capacidade_jornada int default 0,
   gas_mes_referencia numeric default 0,
@@ -516,6 +524,69 @@ create table if not exists public.zonas (
   deleted_at timestamptz
 );
 
+-- 32. FUNCIONARIOS
+create table if not exists public.funcionarios (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null,
+  membro_id uuid not null,
+  nome text not null,
+  admissao text not null,
+  fim_experiencia text not null,
+  fase text not null check (fase in ('experiencia', 'nivel1', 'nivel2', 'nivel3')),
+  fase_desde text not null,
+  usa_vt boolean default false,
+  viagens_dia int default 2,
+  dias_mes_vt int default 26,
+  obs text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by text not null default '',
+  deleted_at timestamptz
+);
+
+-- 33. MUDANCAS_FASE
+create table if not exists public.mudancas_fase (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null,
+  funcionario_id uuid not null,
+  data text not null,
+  de text not null,
+  para text not null,
+  motivo text not null check (motivo in ('fim_experiencia', 'antecipacao', 'criterio', 'outro')),
+  registrado_por text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by text not null default '',
+  deleted_at timestamptz
+);
+
+-- 34. METRICAS_IFOOD
+create table if not exists public.metricas_ifood (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null,
+  data_referencia text not null,
+  nota numeric not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by text not null default '',
+  deleted_at timestamptz
+);
+
+-- 35. CANCELAMENTOS
+create table if not exists public.cancelamentos (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null,
+  data text not null,
+  venda_id uuid,
+  motivo text not null,
+  culpa text not null check (culpa in ('loja', 'motoboy', 'app')),
+  registrado_por text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by text not null default '',
+  deleted_at timestamptz
+);
+
 -- TRIGGERS DE UPDATED_AT EM TODAS AS 31 TABELAS
 do $$
 declare
@@ -526,7 +597,8 @@ declare
     'movimentos', 'canais', 'vendas', 'venda_itens', 'parceiros', 'visitas_ponto',
     'perdas', 'amostras', 'contagens', 'custos_fixos', 'rotina_tarefas',
     'tarefas_avulsas', 'checklist_itens', 'recados_mentor', 'notas_mentor',
-    'configs_mentor', 'promocoes', 'zonas'
+    'configs_mentor', 'promocoes', 'zonas',
+    'funcionarios', 'mudancas_fase', 'metricas_ifood', 'cancelamentos'
   ];
 begin
   foreach t in array tabelas loop
@@ -546,7 +618,8 @@ declare
     'movimentos', 'canais', 'vendas', 'venda_itens', 'parceiros', 'visitas_ponto',
     'perdas', 'amostras', 'contagens', 'custos_fixos', 'rotina_tarefas',
     'tarefas_avulsas', 'checklist_itens', 'recados_mentor', 'notas_mentor',
-    'configs_mentor', 'promocoes', 'zonas'
+    'configs_mentor', 'promocoes', 'zonas',
+    'funcionarios', 'mudancas_fase', 'metricas_ifood', 'cancelamentos'
   ];
 begin
   foreach t in array tabelas loop
@@ -611,6 +684,10 @@ alter table public.notas_mentor enable row level security;
 alter table public.configs_mentor enable row level security;
 alter table public.promocoes enable row level security;
 alter table public.zonas enable row level security;
+alter table public.funcionarios enable row level security;
+alter table public.mudancas_fase enable row level security;
+alter table public.metricas_ifood enable row level security;
+alter table public.cancelamentos enable row level security;
 
 -- POLÍTICAS RLS: MEMBROS
 drop policy if exists "membros_select" on public.membros;
@@ -714,7 +791,8 @@ declare
     'tamanhos', 'produtos', 'producoes', 'producao_itens', 'lotes', 'movimentos',
     'canais', 'vendas', 'venda_itens', 'parceiros', 'visitas_ponto', 'perdas',
     'amostras', 'contagens', 'rotina_tarefas', 'tarefas_avulsas', 'checklist_itens',
-    'recados_mentor', 'promocoes', 'zonas'
+    'recados_mentor', 'promocoes', 'zonas',
+    'funcionarios', 'mudancas_fase', 'metricas_ifood', 'cancelamentos'
   ];
 begin
   foreach t in array tabelas_padrao loop

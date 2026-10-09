@@ -34,8 +34,15 @@ export function Placar() {
   }, [checklist, segunda, hoje, cad.inicioUso])
 
   if (!atual || !anterior || !rede) return null
+  const pAtual = placar(atual, rede.parceiros, cad)
   const melhores = [...porParceiro(atual).entries()].sort((a, b) => b[1].pecas - a[1].pecas).slice(0, 5)
   const parados = [...rede.resumos.values()].filter((r) => r.parado)
+  const func = cad.funcionarios?.[0]
+  const elegivelBonus = func && func.fase !== 'experiencia'
+  const meta = pAtual.metaTotal
+  const superMeta = Math.ceil(meta * 1.2)
+  const fez = pAtual.realizado
+  const bonus = fez >= superMeta ? 100 : fez >= meta ? 50 : 0
 
   return (
     <Tela titulo="Placar da semana" subtitulo={`${dataCurta(segunda)} a ${dataCurta(domingo)} · a reunião de segunda`}>
@@ -50,7 +57,19 @@ export function Placar() {
       </div>
 
       <Secao titulo="Meta × realizado">
-        <PlacarBarras dados={placar(atual, rede.parceiros, cad)} anterior={placar(anterior, rede.parceiros, cad)} />
+        <PlacarBarras dados={pAtual} anterior={placar(anterior, rede.parceiros, cad)} />
+        {elegivelBonus && (
+          <div className="mt-4 border-t border-fio pt-4">
+            <p className="rotulo mb-1">Bônus Semanal: {func.nome}</p>
+            {fez >= superMeta ? (
+              <Aviso tom="ok">Bateu a supermeta ({fez}/{superMeta} peças)! Bônus garantido: R$ 100.</Aviso>
+            ) : fez >= meta ? (
+              <Aviso tom="ok">Bateu a meta ({fez}/{meta} peças)! Bônus: R$ 50 (Faltam {superMeta - fez} para supermeta).</Aviso>
+            ) : (
+              <Aviso tom="aviso">Abaixo da meta ({fez}/{meta} peças). Faltam {meta - fez} para R$ 50.</Aviso>
+            )}
+          </div>
+        )}
       </Secao>
 
       <Secao titulo="Melhores parceiros">

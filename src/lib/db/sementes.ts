@@ -13,11 +13,19 @@ export const EMPRESA = {
 
 export const CONFIG = {
   taxaMaquininha: 0.023,
-  comissaoIfood: null as number | null,
+  comissaoIfood: 0.265,
+  embalagemIfood: 1.00,
+  mensalidadeIfood: 150,
+  limiteMensalidadeIfood: 1800,
+  repasseIfood: 'mensal' as const,
+  encargosFolha: 0.30,
+  fatorDsr: 0.20,
+  tarifaOnibus: 4.95,
+  salarioMinimo: 1621,
   diasValidade: 15,
   diasMaxNoPonto: 7,
   semanasPorMes: 4.333,
-  diariaProducao: 100,
+  diariaProducao: 0,
   capacidadeJornada: 20,
   gasMesReferencia: 93.75,
   formasReferencia: 8,
@@ -115,56 +123,75 @@ const NUTELLA_40G = { descricao: 'Nutella 40 g', valor: 0.04 * 61.38 }
 const GRANDE_TRADICIONAL = { sabor: 'tradicional', tamanho: 'grande' as const, qtd: 1 }
 
 export const PRODUTOS: ProdutoSemente[] = [
-  { tipo: 'brownie', nome: 'Tradicional', sabor: 'tradicional', tamanho: 'pequeno', precoLoja: 12, ifood: true },
-  { tipo: 'brownie', nome: 'Cookie', sabor: 'cookie', tamanho: 'pequeno', precoLoja: 15, ifood: true },
-  { tipo: 'brownie', nome: 'Castanha', sabor: 'castanha', tamanho: 'pequeno', precoLoja: 15, ifood: true },
-  { tipo: 'brownie', nome: 'Limão Siciliano', sabor: 'limao', tamanho: 'pequeno', precoLoja: 15, observacao: 'Só sob encomenda' },
-  { tipo: 'brownie', nome: 'Maçã Verde (whisky)', sabor: 'maca', tamanho: 'pequeno', precoLoja: 18, ifood: true },
-  { tipo: 'brownie', nome: 'Jack Honey', sabor: 'honey', tamanho: 'pequeno', precoLoja: 18, ifood: true },
-  { tipo: 'brownie', nome: 'Grande tradicional', sabor: 'tradicional', tamanho: 'grande', precoLoja: 18, ifood: true },
-  { tipo: 'combo', nome: 'Grande com nutella', precoLoja: 20, composicao: [GRANDE_TRADICIONAL, NUTELLA_40G], ifood: true },
+  { tipo: 'brownie', nome: 'Tradicional', sabor: 'tradicional', tamanho: 'pequeno', precoLoja: 12, vendeNoIfood: true },
+  { tipo: 'brownie', nome: 'Cookie', sabor: 'cookie', tamanho: 'pequeno', precoLoja: 15, vendeNoIfood: true },
+  { tipo: 'brownie', nome: 'Castanha', sabor: 'castanha', tamanho: 'pequeno', precoLoja: 15, vendeNoIfood: true },
+  { tipo: 'brownie', nome: 'Limão Siciliano', sabor: 'limao', tamanho: 'pequeno', precoLoja: 15, vendeNoIfood: false, obsIfood: 'validade de 3 a 7 dias: risco de faltar e cancelar', observacao: 'Só sob encomenda' },
+  { tipo: 'brownie', nome: 'Maçã Verde (whisky)', sabor: 'maca', tamanho: 'pequeno', precoLoja: 18, vendeNoIfood: true },
+  { tipo: 'brownie', nome: 'Jack Honey', sabor: 'honey', tamanho: 'pequeno', precoLoja: 18, vendeNoIfood: true },
+  { tipo: 'brownie', nome: 'Grande tradicional', sabor: 'tradicional', tamanho: 'grande', precoLoja: 18, vendeNoIfood: true },
+  { tipo: 'combo', nome: 'Grande com Nutella', precoLoja: 20, composicao: [GRANDE_TRADICIONAL, NUTELLA_40G, { descricao: 'potinho', valor: 0.30 }], vendeNoIfood: true, observacao: 'Nutella sempre no potinho, à parte' },
   {
-    tipo: 'combo', nome: 'Grande + nutella + sorvete', precoLoja: 25, ifood: true,
+    tipo: 'combo', nome: 'Grande + Nutella + sorvete', precoLoja: 25, vendeNoIfood: false, obsIfood: 'o sorvete derrete no caminho',
     composicao: [GRANDE_TRADICIONAL, NUTELLA_40G, { descricao: 'Sorvete (estimado)', valor: 3 }],
   },
   {
-    tipo: 'combo', nome: 'Old Capuccino', precoLoja: 19.9, ifood: true,
+    tipo: 'combo', nome: 'Old Capuccino', precoLoja: 19.9, vendeNoIfood: false, obsIfood: 'o capuccino chega frio',
     composicao: [GRANDE_TRADICIONAL, { descricao: 'Pó de capuccino', valor: 1 }, { descricao: 'Copo e mexedor', valor: 0.6 }],
   },
   {
-    tipo: 'combo', nome: 'Old Box (4 pequenos)', precoLoja: 59.9, ifood: true,
+    tipo: 'combo', nome: 'Brownie + Coca', precoLoja: 16.9, vendeNoIfood: true,
+    composicao: [{ sabor: 'tradicional', tamanho: 'pequeno', qtd: 1 }, { descricao: 'Coca-Cola mini', valor: 2.50 }],
+  },
+  {
+    tipo: 'combo', nome: 'Dupla da Casa', precoLoja: 24.9, vendeNoIfood: true,
+    composicao: [{ sabor: 'tradicional', tamanho: 'pequeno', qtd: 1 }, { sabor: 'cookie', tamanho: 'pequeno', qtd: 1 }],
+  },
+  {
+    tipo: 'combo', nome: 'Dupla Whisky', precoLoja: 32.9, vendeNoIfood: true,
+    composicao: [{ sabor: 'maca', tamanho: 'pequeno', qtd: 1 }, { sabor: 'honey', tamanho: 'pequeno', qtd: 1 }],
+  },
+  {
+    tipo: 'combo', nome: 'Trio Old', precoLoja: 36.9, vendeNoIfood: true,
+    composicao: [{ sabor: 'tradicional', tamanho: 'pequeno', qtd: 1 }, { sabor: 'cookie', tamanho: 'pequeno', qtd: 1 }, { sabor: 'castanha', tamanho: 'pequeno', qtd: 1 }],
+  },
+  {
+    tipo: 'combo', nome: 'Old Box', precoLoja: 59.9, vendeNoIfood: true,
     composicao: [
-      { sabor: 'tradicional', tamanho: 'pequeno', qtd: 4 },
+      { sabor: 'tradicional', tamanho: 'pequeno', qtd: 2 },
+      { sabor: 'cookie', tamanho: 'pequeno', qtd: 1 },
+      { sabor: 'castanha', tamanho: 'pequeno', qtd: 1 },
       { descricao: 'Caixa Old Box', valor: 2 },
       { descricao: 'Etiqueta', valor: 0.8 },
       { descricao: 'Acabamento', valor: 0.3 },
     ],
   },
-  { tipo: 'bebida', nome: 'Café', precoLoja: 3, custoManual: 0.6, observacao: 'Custo estimado, a confirmar' },
-  { tipo: 'bebida', nome: 'Água', precoLoja: 5, custoManual: 1.19, observacao: 'Custo estimado, a confirmar' },
-  { tipo: 'bebida', nome: 'Capuccino', precoLoja: 5, custoManual: 1.6, observacao: 'Custo estimado, a confirmar' },
-  { tipo: 'bebida', nome: 'Café gelado 180 ml', precoLoja: 6, custoManual: 2, observacao: 'Custo estimado, a confirmar' },
-  { tipo: 'bebida', nome: 'Café gelado 300 ml', precoLoja: 8, custoManual: 2.9, observacao: 'Custo estimado, a confirmar' },
-  { tipo: 'bebida', nome: 'Suco de polpa 300 ml', precoLoja: 6, custoManual: 3.5, observacao: 'Pior margem da casa' },
-  { tipo: 'bebida', nome: 'Maracujá 300 ml', precoLoja: 8, custoManual: 4.5, observacao: 'Pior margem da casa' },
-  { tipo: 'bebida', nome: 'Coca mini', precoLoja: 6, custoManual: null, observacao: 'FALTA o custo' },
-  { tipo: 'bebida', nome: 'Fanta mini', precoLoja: 6, custoManual: null, observacao: 'FALTA o custo' },
-  { tipo: 'salgado', nome: 'Pão de queijo', precoLoja: 6, custoManual: null, observacao: 'FALTA receita e custo' },
-  { tipo: 'salgado', nome: 'Esfirra', precoLoja: 7, custoManual: null, observacao: 'FALTA receita e custo' },
+  { tipo: 'bebida', nome: 'Café', precoLoja: 3, custoManual: 0.6, vendeNoIfood: false, obsIfood: 'chega frio', observacao: 'Custo estimado, a confirmar' },
+  { tipo: 'bebida', nome: 'Água', precoLoja: 5, custoManual: 1.19, vendeNoIfood: true, observacao: 'Custo estimado, a confirmar' },
+  { tipo: 'bebida', nome: 'Capuccino', precoLoja: 5, custoManual: 1.6, vendeNoIfood: false, obsIfood: 'chega frio', observacao: 'Custo estimado, a confirmar' },
+  { tipo: 'bebida', nome: 'Café gelado 180 ml', precoLoja: 6, custoManual: 2, vendeNoIfood: false, obsIfood: 'o gelo derrete e vaza', observacao: 'Custo estimado, a confirmar' },
+  { tipo: 'bebida', nome: 'Café gelado 300 ml', precoLoja: 8, custoManual: 2.9, vendeNoIfood: false, obsIfood: 'o gelo derrete e vaza', observacao: 'Custo estimado, a confirmar' },
+  { tipo: 'bebida', nome: 'Suco de polpa 300 ml', precoLoja: 6, custoManual: 3.5, vendeNoIfood: false, obsIfood: 'esquenta e vaza', observacao: 'Pior margem da casa' },
+  { tipo: 'bebida', nome: 'Maracujá 300 ml', precoLoja: 8, custoManual: 4.5, vendeNoIfood: false, obsIfood: 'esquenta e vaza', observacao: 'Pior margem da casa' },
+  { tipo: 'bebida', nome: 'Coca-Cola mini', precoLoja: 6, custoManual: 2.50, vendeNoIfood: true },
+  { tipo: 'bebida', nome: 'Fanta mini', precoLoja: 6, custoManual: 2.50, vendeNoIfood: true },
+  { tipo: 'salgado', nome: 'Pão de queijo', precoLoja: 6, custoManual: null, vendeNoIfood: true, observacao: 'FALTA receita e custo' },
+  { tipo: 'salgado', nome: 'Esfirra', precoLoja: 7, custoManual: null, vendeNoIfood: true, observacao: 'FALTA receita e custo' },
 ]
 
 export const CANAIS: Array<{
-  codigo: CodigoCanal; nome: string; tipo: 'direto' | 'parceiro'; tamanhoPadrao: CodigoTamanho
+  codigo: CodigoCanal | 'rede'; nome: string; tipo: 'direto' | 'parceiro'; tamanhoPadrao: CodigoTamanho
   precoPadrao: number | null; comissao: number | null
 }> = [
   { codigo: 'loja', nome: 'Loja', tipo: 'direto', tamanhoPadrao: 'pequeno', precoPadrao: null, comissao: null },
   { codigo: 'rota', nome: 'Rota', tipo: 'direto', tamanhoPadrao: 'grande', precoPadrao: 18, comissao: null },
   { codigo: 'feira', nome: 'Feira', tipo: 'direto', tamanhoPadrao: 'pequeno', precoPadrao: 15, comissao: null },
   { codigo: 'evento', nome: 'Evento', tipo: 'direto', tamanhoPadrao: 'pequeno', precoPadrao: 18, comissao: null },
-  { codigo: 'ifood', nome: 'iFood', tipo: 'direto', tamanhoPadrao: 'pequeno', precoPadrao: null, comissao: null },
+  { codigo: 'ifood', nome: 'iFood', tipo: 'direto', tamanhoPadrao: 'pequeno', precoPadrao: null, comissao: 0.265 },
   { codigo: 'vendedor', nome: 'Vendedor de rua', tipo: 'parceiro', tamanhoPadrao: 'pequeno', precoPadrao: 8, comissao: null },
   { codigo: 'motorista', nome: 'Motorista de aplicativo', tipo: 'parceiro', tamanhoPadrao: 'pequeno', precoPadrao: 8, comissao: null },
   { codigo: 'ponto', nome: 'Ponto de revenda', tipo: 'parceiro', tamanhoPadrao: 'grande', precoPadrao: 10, comissao: null },
+  { codigo: 'rede', nome: 'Rede de restaurantes', tipo: 'parceiro', tamanhoPadrao: 'pequeno', precoPadrao: 5, comissao: null },
 ]
 
 export const PROMOCOES = [
@@ -180,7 +207,7 @@ export const CUSTOS_FIXOS: Array<{
   { nome: 'Aluguel + água + IPTU do ponto', valorMensal: 477.44, grupo: 'ponto', visibilidade: 'todos' },
   { nome: 'Internet', valorMensal: 130, grupo: 'ponto', visibilidade: 'todos' },
   { nome: 'EMIVE (segurança)', valorMensal: 299.89, grupo: 'ponto', visibilidade: 'todos', observacao: 'Necessária pela localização' },
-  { nome: 'Maria Eduarda — balcão (5 dias)', valorMensal: 2166.5, grupo: 'ponto', visibilidade: 'todos', observacao: 'O 6º dia é produção (diária, no custo do brownie)' },
+  // { nome: 'Maria Eduarda — balcão (5 dias)', valorMensal: 2166.5, grupo: 'ponto', visibilidade: 'todos', observacao: 'O 6º dia é produção (diária, no custo do brownie)' }, // Desativado na v3
   { nome: 'Energia do ponto (estimativa)', valorMensal: 300, grupo: 'ponto', visibilidade: 'todos', observacao: 'Trocar pela primeira conta (outubro)' },
   { nome: 'Mentoria', valorMensal: 1200, grupo: 'empresa', visibilidade: 'todos', inicio: '2026-10-01', observacao: 'A partir de out/2026, 14 meses' },
   { nome: 'Combustível — entregas e reposição (estimativa)', valorMensal: 493, grupo: 'empresa', visibilidade: 'todos', observacao: 'Na fase 2, usar os gastos lançados' },
@@ -279,4 +306,8 @@ export const META_REDE_COMPLETA = 440
 export const LIMITES_FATURAMENTO = [
   { nome: 'Alerta (80% do teto)', valor: 64800 },
   { nome: 'Teto do MEI — conferir com o contador', valor: 81000 },
+]
+
+export const PARCEIROS = [
+  { tipo: 'rede' as const, nome: 'Espeto do João', whatsapp: '', status: 'candidato' as const, dataEntrada: '2026-10-03', observacoes: 'Proposta pronta em 03/10, ainda não enviada. Unidades conhecidas: Tijucal e Jardim Imperial.' },
 ]

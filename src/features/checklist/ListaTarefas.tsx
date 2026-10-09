@@ -6,6 +6,7 @@ import { marcar } from '@/lib/operacoes/checklist'
 import { Botao, Selo } from '@/components/ui/basicos'
 import { Folha } from '@/components/ui/Folha'
 import { mostrarErro } from '@/components/ui/Toast'
+import { useSessao } from '@/lib/sessao'
 import { ATALHOS, type LinhaTarefa } from './tarefas'
 
 const SEGURAR_MS = 550
@@ -53,6 +54,8 @@ function Linha({ linha, data, destaque, somenteLeitura, aoPular }: {
   const gestos = useToqueOuSegurar(alternarFeito, () => aoPular(linha))
   const atalho = linha.atalho ? ATALHOS[linha.atalho] : undefined
   const rotuloStatus = linha.status === 'feito' ? 'feita' : linha.status === 'pulado' ? 'pulada' : 'pendente'
+  const sessao = useSessao()
+  const eDeOutroPapel = linha.papelOriginal && linha.papelOriginal !== sessao.papel && linha.papelOriginal !== 'mentor'
 
   return (
     <li className={cx('flex items-stretch gap-2 border-b border-fio', destaque && 'border-l-4 border-l-osso bg-carvao')}>
@@ -75,6 +78,14 @@ function Linha({ linha, data, destaque, somenteLeitura, aoPular }: {
           <span className={cx('block font-bold', linha.status !== 'pendente' && 'text-cinza')}>{linha.titulo}</span>
           {linha.detalhe && <span className="block text-[14px] text-cinza">{linha.detalhe}</span>}
           {linha.item?.nota && <span className="block text-[14px] text-vermelho">Nota: {linha.item.nota}</span>}
+          {linha.status === 'pendente' && eDeOutroPapel && !somenteLeitura && (
+            <span className="mt-2 block">
+              <Botao pequeno variante="secundario" onClick={(e) => { e.stopPropagation(); alternarFeito(); }}>Assumir</Botao>
+            </span>
+          )}
+          {linha.item?.marcadoPor && linha.status === 'feito' && eDeOutroPapel && (
+            <span className="block text-[12px] text-verde mt-1">Feita por {linha.item.marcadoPor}</span>
+          )}
         </span>
       </button>
       {atalho?.para && (

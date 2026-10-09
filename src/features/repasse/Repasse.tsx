@@ -17,7 +17,7 @@ import { mostrarErro, mostrarToast } from '@/components/ui/Toast'
 import { MixSabores, mixSortido } from './MixSabores'
 
 const ABAS: Array<{ valor: TipoParceiro; rotulo: string }> = [
-  { valor: 'vendedor', rotulo: 'Vendedor' }, { valor: 'motorista', rotulo: 'Motorista' }, { valor: 'ponto', rotulo: 'Ponto' },
+  { valor: 'vendedor', rotulo: 'Vendedor' }, { valor: 'motorista', rotulo: 'Motorista' }, { valor: 'ponto', rotulo: 'Ponto' }, { valor: 'rede', rotulo: 'Rede' },
 ]
 const ORDEM_STATUS: Record<string, number> = { ativo: 0, teste: 1, treino: 2, pausado: 3, candidato: 4, saiu: 5 }
 const DIAS_MINIMOS_PONTO = 7
@@ -56,19 +56,26 @@ export function Repasse() {
     .filter((p) => p.tipo === tipo && p.status !== 'saiu')
     .sort((a, b) => ORDEM_STATUS[a.status] - ORDEM_STATUS[b.status] || a.nome.localeCompare(b.nome, 'pt-BR')), [parceiros, tipo])
 
-  const precoPequeno = cad.canal('vendedor')?.precoPadrao ?? 8
+  const precoPequenoPadrao = cad.canal('vendedor')?.precoPadrao ?? 8
   const precoGrande = cad.canal('ponto')?.precoPadrao ?? 10
+
+  const getPrecoPequeno = (saborId: string) => {
+    if (tipo !== 'rede') return precoPequenoPadrao
+    const nome = cad.saborPorId.get(saborId)?.nome.toLowerCase() ?? ''
+    if (nome.includes('jack') || nome.includes('honey') || nome.includes('maca') || nome.includes('maçã')) return 5.50
+    return 5.00
+  }
 
   const somaMixPequeno = Object.values(mixPequeno).reduce((s, v) => s + v, 0)
   const somaMixGrande = Object.values(mixGrande).reduce((s, v) => s + v, 0)
   const totalPecas = somaMixPequeno + somaMixGrande
 
-  const subtotalPequeno = somaMixPequeno * precoPequeno
+  const subtotalPequeno = Object.entries(mixPequeno).reduce((s, [saborId, qtd]) => s + qtd * getPrecoPequeno(saborId), 0)
   const subtotalGrande = somaMixGrande * precoGrande
   const totalValor = subtotalPequeno + subtotalGrande
 
   const lucroPequeno = Object.entries(mixPequeno).reduce(
-    (s, [saborId, qtd]) => s + qtd * (precoPequeno - (cad.tabela.variavel[saborId]?.pequeno ?? 0)),
+    (s, [saborId, qtd]) => s + qtd * (getPrecoPequeno(saborId) - (cad.tabela.variavel[saborId]?.pequeno ?? 0)),
     0,
   )
   const lucroGrande = Object.entries(mixGrande).reduce(
@@ -78,7 +85,7 @@ export function Repasse() {
   const lucroTotal = lucroPequeno + lucroGrande
 
   const precoInvalido =
-    (totalPequeno > 0 && precoPequeno >= cad.config.precoFinalRevenda) ||
+    (tipo !== 'rede' && totalPequeno > 0 && precoPequenoPadrao >= cad.config.precoFinalRevenda) ||
     (totalGrande > 0 && precoGrande >= cad.config.precoFinalRevenda)
 
   const mixPequenoIncompleto = totalPequeno > 0 && somaMixPequeno !== totalPequeno
@@ -98,7 +105,7 @@ export function Repasse() {
               saborId,
               tamanho: 'pequeno',
               qtd,
-              precoUnitario: precoPequeno,
+              precoUnitario: getPrecoPequeno(saborId),
               custoUnitario: cad.tabela.variavel[saborId]?.pequeno ?? 0,
             })
           }
@@ -125,7 +132,7 @@ export function Repasse() {
         {
           horaViradaDia: cad.config.horaViradaDia,
           produtoPorId: cad.produtoPorId,
-          diasMinimos: tipo === 'ponto' ? DIAS_MINIMOS_PONTO : 0,
+          diasMinimos: (tipo === 'ponto' || tipo === 'rede') ? DIAS_MINIMOS_PONTO : 0,
         },
       )
 
@@ -207,7 +214,7 @@ export function Repasse() {
                   <div>
                     <span className="font-bold text-base block text-osso">Peças Pequenas</span>
                     <span className="text-[13px] text-cinza block">
-                      {unidadesPequeno} forma{unidadesPequeno !== 1 ? 's' : ''} ({totalPequeno} peças) · {reais(precoPequeno)}/peça
+                      {unidadesPequeno} forma{unidadesPequeno !== 1 ? 's' : ''} ({totalPequeno} peças){tipo !== 'rede' ? ` · ${reais(precoPequenoPadrao)}/peça` : ' · preço variável'}
                     </span>
                   </div>
                   <Stepper
@@ -322,7 +329,7 @@ export function Repasse() {
             <div className="text-cinza text-[14px] space-y-0.5">
               {somaMixPequeno > 0 && (
                 <p>
-                  {somaMixPequeno} pequenas × {reais(precoPequeno)} = {reais(subtotalPequeno)}
+                  {somaMixPequeno} pequenas {tipo !== 'rede' ? `× ${reais(precoPequenoPadrao)}` : ''} = {reais(subtotalPequeno)}
                 </p>
               )}
               {somaMixGrande > 0 && (

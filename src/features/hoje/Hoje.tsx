@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, MessageSquareQuote } from 'lucide-react'
 import { useSessao, veCustos } from '@/lib/sessao'
@@ -7,13 +7,14 @@ import { useAgora, useHoje } from '@/lib/dados/consultas'
 import { useChecklist, useEstoque, useNomeItem, useRecados, useRede, useResumoVendas } from '@/lib/dados/hooks'
 import { montarAlertas, placar, somar } from '@/lib/dados/indicadores'
 import { diaSemanaIso, horaLocal, inicioSemana, somarDias } from '@/lib/motor/dia'
+import { alertasFuncionario } from '@/lib/motor/funcionario'
 import { dataCurta, DIAS_SEMANA, dataHora, numero, reais } from '@/lib/formato'
 import { marcarRecadoLido } from '@/lib/operacoes/mentor'
 import { Aviso, Botao, Numero } from '@/components/ui/basicos'
 import { Secao, Tela } from '@/components/ui/Tela'
 import { mostrarErro } from '@/components/ui/Toast'
 import { ListaTarefas } from '@/features/checklist/ListaTarefas'
-import { montarDia, tarefaDaHora } from '@/features/checklist/tarefas'
+import { montarDia, tarefaDaHora, filtrarPorTurno } from '@/features/checklist/tarefas'
 import { PlacarBarras } from '@/features/placar/PlacarBarras'
 
 const MISSAO = ['', 'Produção de manhã, reunião da semana à tarde', 'Entrega nos pontos de manhã, feira à noite',
@@ -50,13 +51,19 @@ export function Hoje() {
   const rede = useRede(hoje)
   const nomeItem = useNomeItem()
 
-  const papelChecklist = sessao.papel === 'equipe' ? 'equipe' : 'dono'
-  const linhas = useMemo(() => (checklist ? montarDia(checklist, hoje, papelChecklist, hoje) : []), [checklist, hoje, papelChecklist])
+  const [papelVisivel, setPapelVisivel] = useState<'dono'|'equipe'>(sessao.papel === 'equipe' ? 'equipe' : 'dono')
+  const linhas = useMemo(() => (checklist ? montarDia(checklist, hoje, papelVisivel, hoje) : []), [checklist, hoje, papelVisivel])
+  const linhasVisiveis = useMemo(() => filtrarPorTurno(linhas, horaLocal(agora)), [linhas, agora])
   const totalHoje = somar(vendasHoje ?? [])
   const alertas = estoque ? montarAlertas({
     estoque, rede: gestao ? rede?.resumos : undefined, sumico: gestao ? estoque.sumicoMes : 0,
     nomeItem, precoMedioLoja: cad.precoMedioLoja,
   }) : []
+  
+  if (gestao) {
+    alertas.push(...alertasFuncionario(cad.funcionarios, hoje))
+  }
+  
   const dia = diaSemanaIso(hoje)
 
   return (
@@ -71,10 +78,23 @@ export function Hoje() {
           : <Numero rotulo="Vendas" valor={numero(totalHoje.vendas)} />}
       </section>
 
-      <Secao titulo="Checklist do dia" direita={<Link to="/checklist" className="text-[13px] font-bold uppercase tracking-[0.08em] text-cinza">Semana</Link>}>
-        {linhas.length
-          ? <ListaTarefas linhas={linhas} data={hoje} destaque={tarefaDaHora(linhas, horaLocal(agora))} somenteLeitura={sessao.papel === 'mentor'} />
-          : <p className="text-cinza">Nenhuma tarefa para hoje.</p>}
+      <Secao titulo="Checklist do dia" direita={
+        <div className="flex items-center gap-4">
+          {sessao.papel !== 'mentor' && (
+            <button 
+              type="button" 
+              className="text-[13px] text-azul hover:underline"
+              onClick={() => setPapelVisivel(p => p === 'dono' ? 'equipe' : 'dono')}
+            >
+              Ver {papelVisivel === 'dono' ? 'equipe' : 'dono'}
+            </button>
+          )}
+          <Link to="/checklist" className="text-[13px] font-bold uppercase tracking-[0.08em] text-cinza">Semana</Link>
+        </div>
+      }>
+        {linhasVisiveis.length
+          ? <ListaTarefas linhas={linhasVisiveis} data={hoje} destaque={tarefaDaHora(linhasVisiveis, horaLocal(agora))} somenteLeitura={sessao.papel === 'mentor'} />
+          : <p className="text-cinza">Nenhuma tarefa para este turno.</p>}
       </Secao>
 
       {gestao && vendasSemana && rede && (

@@ -17,14 +17,14 @@ import { FormParceiro } from './FormParceiro'
 import { textoDaMensagem, TITULO_MOMENTO, type Momento } from './mensagens'
 
 const ABAS: Array<{ valor: TipoParceiro; rotulo: string }> = [
-  { valor: 'vendedor', rotulo: 'Vendedores' }, { valor: 'motorista', rotulo: 'Motoristas' }, { valor: 'ponto', rotulo: 'Pontos' },
+  { valor: 'vendedor', rotulo: 'Vendedores' }, { valor: 'motorista', rotulo: 'Motoristas' }, { valor: 'ponto', rotulo: 'Pontos' }, { valor: 'rede', rotulo: 'Redes' },
 ]
 
 const TOM_STATUS = { ativo: 'ok', teste: 'aviso', treino: 'aviso', candidato: 'neutro', pausado: 'neutro', saiu: 'neutro' } as const
 
 function Cartao({ r, mensagem, remetente, gestao }: { r: ResumoParceiro; mensagem: Momento | null; remetente: string; gestao: boolean }) {
   const p = r.parceiro
-  const local = p.tipo === 'vendedor' ? p.zona : p.tipo === 'ponto' ? (p.polo ? `polo ${p.polo}` : undefined) : undefined
+  const local = p.tipo === 'vendedor' ? p.zona : (p.tipo === 'ponto' || p.tipo === 'rede') ? (p.polo ? `polo ${p.polo}` : undefined) : undefined
   return (
     <li className="flex items-stretch rounded-deco border border-fio bg-carvao">
       <Link to={`/rede/${p.id}`} className="min-w-0 flex-1 p-3 active:bg-grafite">
@@ -73,7 +73,7 @@ export function Rede() {
   const conflitos = aba === 'vendedor' ? conflitosDeZona(todos.filter((p) => p.tipo === 'vendedor')) : []
 
   return (
-    <Tela titulo="Rede" subtitulo="Vendedores, motoristas e pontos de revenda"
+    <Tela titulo="Rede" subtitulo="Vendedores, motoristas, pontos e redes de parceiros"
       acao={dono ? (
         <button type="button" onClick={() => setNovo(true)} aria-label="Novo parceiro" className="flex size-12 items-center justify-center rounded-deco border border-osso">
           <Plus className="size-6" />

@@ -3,11 +3,10 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db/banco'
 import { useSessao } from '@/lib/sessao'
 import { useCadastros } from '@/lib/dados/cadastros'
-import { novoId } from '@/lib/db/id'
+import { novoId } from '@/lib/sync/gravar'
 import { Secao, Tela } from '@/components/ui/Tela'
 import { Botao, Campo } from '@/components/ui/basicos'
-import { Check, Edit2, Trash2 } from 'lucide-react'
-import { cx } from '@/lib/cx'
+import { Check, Trash2 } from 'lucide-react'
 
 export function ListaCompras() {
   const sessao = useSessao()
@@ -68,12 +67,13 @@ export function ListaCompras() {
       {dono && (
         <Secao titulo="Adicionar Item">
           <div className="grid grid-cols-[1fr_80px_auto] gap-2 items-end">
-            <Campo rotulo="Insumo" render={(id) => (
-              <select id={id} className="caixa" value={insumoId} onChange={e => setInsumoId(e.target.value)}>
+            <label className="block space-y-1">
+              <span className="rotulo">Insumo</span>
+              <select className="campo w-full" value={insumoId} onChange={e => setInsumoId(e.target.value)}>
                 <option value="">Selecione...</option>
                 {cad.insumos.map(i => <option key={i.id} value={i.id}>{i.nome} ({i.unidade})</option>)}
               </select>
-            )} />
+            </label>
             <Campo rotulo="Qtd" type="number" step="0.01" value={qtd} onChange={e => setQtd(e.target.value)} />
             <Botao onClick={adicionar} disabled={!insumoId || !qtd}>Add</Botao>
           </div>

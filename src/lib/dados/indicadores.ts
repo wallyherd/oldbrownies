@@ -8,6 +8,7 @@ import { diaSemanaIso, diasEntre, diasNoMes, somarDias } from '@/lib/motor/dia'
 import { DIAS_ALERTA_VALIDADE, chaveSaborTamanho, diasParaVencer, estaVencido, saldoPorLote, saldoPorSaborTamanho } from '@/lib/motor/estoque'
 import { DIAS_SEM_VISITA, estaParado, trocaPct, vendidoNoPonto } from '@/lib/motor/rede'
 import { projetarMes, resultadoMes, somarFixos } from '@/lib/motor/resultado'
+import { calcularPagamento } from '@/lib/motor/funcionario'
 import type { Cadastros } from './cadastros'
 import type { VendasPeriodo } from './consultas'
 
@@ -217,16 +218,44 @@ export function fixosDoMes(custos: CustoFixo[], mes: string) {
   return somarFixos(custos.filter((c) => !c.inicio || c.inicio <= fimDoMes), true)
 }
 
-export function resultadoDoMes(resumosMes: ResumoVenda[], cad: Pick<Cadastros, 'custosFixos' | 'config' | 'lucroLoja' | 'lucroPecaCanal'>, hoje: string) {
+export function resultadoDoMes(resumosMes: ResumoVenda[], cad: Pick<Cadastros, 'custosFixos' | 'config' | 'lucroLoja' | 'lucroPecaCanal' | 'funcionarios'>, hoje: string) {
   const totais = somar(resumosMes)
   const fixos = fixosDoMes(cad.custosFixos, hoje)
-  const atual = resultadoMes({ margem: totais.lucro, faturamento: totais.bruto, fixos, provisaoImposto: cad.config.provisaoImposto })
-  const dia = Number(hoje.slice(8, 10))
   const dias = diasNoMes(hoje)
+  
+  let custoFuncionario = 0
+  if (cad.funcionarios && cad.funcionarios.length > 0) {
+    const f = cad.funcionarios[0] // Assume a 1ª
+    const canais = porCanal(resumosMes)
+    const pagamento = calcularPagamento({
+      fase: f.fase,
+      diasNoMes: dias,
+      diasNestaFase: dias, // Simplificado por enquanto
+      baseLoja: canais['loja']?.bruto ?? 0,
+      baseIfood: canais['ifood']?.bruto ?? 0,
+      fatorDsr: cad.config.fatorDsr,
+      semanas: [], // Simplificado
+      notaIfood: 5, cancelamentosFalhaLoja: 0, checklistEquipe: 1, trimestreBateuMeta: false, // Default max
+      usaVT: f.usaVT, viagensDia: f.viagensDia, diasMesVT: f.diasMesVT,
+      tarifaOnibus: cad.config.tarifaOnibus ?? 4.95,
+      encargosFolha: cad.config.encargosFolha
+    })
+    custoFuncionario = pagamento.custoEmpresa
+  }
+  
+  const baseIfood = porCanal(resumosMes)['ifood']?.bruto ?? 0
+  const mensalidadeIfood = baseIfood > (cad.config.limiteMensalidadeIfood ?? 1800) ? (cad.config.mensalidadeIfood ?? 130) : 0
+
+  const atual = resultadoMes({ 
+    margem: totais.lucro, faturamento: totais.bruto, fixos, 
+    provisaoImposto: cad.config.provisaoImposto, custoFuncionario, mensalidadeIfood 
+  })
+  const dia = Number(hoje.slice(8, 10))
   const projetado = resultadoMes({
     margem: projetarMes(totais.lucro, dia, dias),
     faturamento: projetarMes(totais.bruto, dia, dias),
     fixos, provisaoImposto: cad.config.provisaoImposto,
+    custoFuncionario, mensalidadeIfood
   })
   const lucroForma = cad.lucroPecaCanal('vendedor') * 35
   return {

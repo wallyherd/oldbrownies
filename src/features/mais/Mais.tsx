@@ -37,7 +37,9 @@ const GRUPOS: Array<{ titulo: string; itens: Item[] }> = [
     titulo: 'Empresa',
     itens: [
       { para: '/mais/configuracoes', rotulo: 'Empresa e configurações', papeis: ['dono', 'mentor'] },
+      { para: '/mais/equipe', rotulo: 'Equipe', papeis: ['dono', 'mentor'] },
       { para: '/mais/convites', rotulo: 'Convites', papeis: ['dono', 'mentor'] },
+      { para: '/mais/ifood', rotulo: 'iFood (Métricas e Cancelamentos)', papeis: ['dono', 'mentor'] },
       { para: '/mais/dados', rotulo: 'Sincronização e dados', detalhe: 'exportar tudo', papeis: ['dono', 'mentor', 'equipe'] },
     ],
   },

@@ -15,8 +15,10 @@ export interface LinhaTarefa {
   origem?: TarefaAvulsa['origem']
   rotinaTarefaId?: string
   tarefaAvulsaId?: string
+  tarefaAvulsaId?: string
   item?: ChecklistItem
   status: 'feito' | 'pulado' | 'pendente'
+  papelOriginal: 'dono' | 'equipe'
 }
 
 export interface DadosChecklist { rotina: RotinaTarefa[]; avulsas: TarefaAvulsa[]; itens: ChecklistItem[] }
@@ -47,7 +49,7 @@ export function montarDia(d: DadosChecklist, data: string, papel: 'dono' | 'equi
     const item = doDia.find((i) => i.rotinaTarefaId === t.id)
     return {
       chave: t.id, titulo: t.titulo, detalhe: t.detalhe, inicio: t.inicio, fim: t.fim, tipo: t.tipo,
-      obrigatoria: t.obrigatoria, atalho: t.atalho, rotinaTarefaId: t.id, item, status: statusDe(item),
+      obrigatoria: t.obrigatoria, atalho: t.atalho, rotinaTarefaId: t.id, item, status: statusDe(item), papelOriginal: t.papel as any,
     }
   })
   // Avulsas ficam no Hoje até serem feitas; nos dias passados, aparecem só na própria data.
@@ -60,7 +62,7 @@ export function montarDia(d: DadosChecklist, data: string, papel: 'dono' | 'equi
       const item = doDia.find((i) => i.tarefaAvulsaId === t.id)
       return {
         chave: t.id, titulo: t.titulo, detalhe: t.detalhe, obrigatoria: false, origem: t.origem,
-        tarefaAvulsaId: t.id, item, status: statusDe(item, t.feitaEm),
+        tarefaAvulsaId: t.id, item, status: statusDe(item, t.feitaEm), papelOriginal: t.papel ?? 'dono',
       }
     })
   return [...avulsas, ...rotina]
@@ -68,4 +70,18 @@ export function montarDia(d: DadosChecklist, data: string, papel: 'dono' | 'equi
 
 export function tarefaDaHora(linhas: LinhaTarefa[], agora: string): string | undefined {
   return linhas.find((l) => l.inicio && l.fim && l.inicio <= agora && agora < (l.fim === '00:00' ? '24:00' : l.fim))?.chave
+}
+
+export function filtrarPorTurno(linhas: LinhaTarefa[], horaAtual: string): LinhaTarefa[] {
+  const eDeTarde = horaAtual >= '13:00'
+  return linhas.filter(l => {
+    if (!l.inicio) return true
+    const daManha = l.inicio < '13:00'
+    if (!eDeTarde) {
+      return daManha
+    } else {
+      if (!daManha) return true
+      return l.status === 'pendente'
+    }
+  })
 }

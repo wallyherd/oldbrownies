@@ -44,6 +44,7 @@ function sementesDaOperacao(hoje: string): Op[] {
       op('rotinaTarefas', { diaSemana, inicio, fim, titulo, detalhe, tipo, obrigatoria, atalho, papel: 'dono', ordem, ativa: true })),
     ...S.TAREFAS_AVULSAS.map(({ quando, ...t }) => op('tarefasAvulsas', { ...t, data: dataDaTarefa(quando, hoje), papel: 'dono' })),
     ...S.ZONAS.map((z) => op('zonas', z)),
+    ...S.PARCEIROS.map((p) => op('parceiros', p)),
     op('configsMentor', { limitesFaturamento: S.LIMITES_FATURAMENTO }),
   ]
 }

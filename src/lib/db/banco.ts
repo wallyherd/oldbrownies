@@ -35,6 +35,10 @@ export interface Registros {
   configsMentor: T.ConfigMentor
   promocoes: T.Promocao
   zonas: T.Zona
+  funcionarios: T.Funcionario
+  mudancasFase: T.MudancaFase
+  metricasIfood: T.MetricasIfood
+  cancelamentos: T.Cancelamento
 }
 
 export type NomeTabela = keyof Registros
@@ -86,6 +90,10 @@ const INDICES: Record<NomeTabela, string> = {
   configsMentor: COMUM,
   promocoes: COMUM,
   zonas: COMUM,
+  funcionarios: `${COMUM}, membroId`,
+  mudancasFase: `${COMUM}, funcionarioId`,
+  metricasIfood: `${COMUM}, dataReferencia`,
+  cancelamentos: `${COMUM}, data`,
 }
 
 export const TABELAS = Object.keys(INDICES) as NomeTabela[]

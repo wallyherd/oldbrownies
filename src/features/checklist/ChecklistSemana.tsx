@@ -7,13 +7,14 @@ import { cx } from '@/lib/cx'
 import { useCadastros } from '@/lib/dados/cadastros'
 import { useHoje } from '@/lib/dados/consultas'
 import { useChecklist } from '@/lib/dados/hooks'
+import { useAgora } from '@/lib/dados/consultas'
 import { cumprimento } from '@/lib/motor/checklist'
-import { inicioSemana, somarDias } from '@/lib/motor/dia'
+import { inicioSemana, somarDias, horaLocal } from '@/lib/motor/dia'
 import { dataCurta, DIAS_CURTOS, DIAS_SEMANA, pct } from '@/lib/formato'
 import { Barra } from '@/components/ui/basicos'
 import { Secao, Tela } from '@/components/ui/Tela'
 import { ListaTarefas } from './ListaTarefas'
-import { montarDia, type DadosChecklist, type LinhaTarefa } from './tarefas'
+import { montarDia, filtrarPorTurno, type DadosChecklist, type LinhaTarefa } from './tarefas'
 
 export const NOME_TIPO: Record<TipoTarefa, string> = {
   escola: 'Escola', rota: 'Rota', captacao: 'Captação', mensagem: 'Mensagens', operacao: 'Operação', feira: 'Feira', preparo: 'Preparo',
@@ -44,6 +45,7 @@ export function ChecklistSemana() {
   const sessao = useSessao()
   const cad = useCadastros()
   const hoje = useHoje(cad.config.horaViradaDia)
+  const agora = useAgora()
   const [segunda, setSegunda] = useState(() => inicioSemana(hoje))
   const [aberto, setAberto] = useState<string | null>(hoje)
   const dados = useChecklist(somarDias(segunda, -21), somarDias(segunda, 6))
@@ -113,10 +115,13 @@ export function ChecklistSemana() {
           {aberto && (
             <Secao titulo={`${DIAS_SEMANA[dias.indexOf(aberto) + 1] ?? ''} ${dataCurta(aberto)}`}>
               {(() => {
-                const linhas = resumo.porDia.find((d) => d.data === aberto)?.linhas ?? []
+                let linhas = resumo.porDia.find((d) => d.data === aberto)?.linhas ?? []
+                if (aberto === hoje) {
+                  linhas = filtrarPorTurno(linhas, horaLocal(agora))
+                }
                 return linhas.length
                   ? <ListaTarefas linhas={linhas} data={aberto} somenteLeitura={sessao.papel === 'mentor' || aberto > hoje} />
-                  : <p className="text-cinza">Folga.</p>
+                  : <p className="text-cinza">Folga ou sem tarefas no turno.</p>
               })()}
             </Secao>
           )}

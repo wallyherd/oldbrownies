@@ -17,7 +17,7 @@ export const STATUS: Array<{ valor: StatusParceiro; rotulo: string }> = [
 ]
 
 export const TIPOS: Array<{ valor: TipoParceiro; rotulo: string }> = [
-  { valor: 'vendedor', rotulo: 'Vendedor' }, { valor: 'motorista', rotulo: 'Motorista' }, { valor: 'ponto', rotulo: 'Ponto' },
+  { valor: 'vendedor', rotulo: 'Vendedor' }, { valor: 'motorista', rotulo: 'Motorista' }, { valor: 'ponto', rotulo: 'Ponto' }, { valor: 'rede', rotulo: 'Rede' },
 ]
 
 export function FormParceiro({ parceiro, tipoInicial, hoje, aoSalvar }: {
@@ -28,9 +28,9 @@ export function FormParceiro({ parceiro, tipoInicial, hoje, aoSalvar }: {
 }) {
   const cad = useCadastros()
   const [p, setP] = useState<NovoRegistro<Parceiro>>(() => parceiro ?? {
-    tipo: tipoInicial, nome: '', whatsapp: '', status: tipoInicial === 'ponto' ? 'teste' : 'candidato', dataEntrada: hoje,
-    noites: [], diaVisita: tipoInicial === 'ponto' ? 2 : undefined,
-    fimTeste: tipoInicial === 'ponto' ? somarDias(hoje, DIAS_TESTE_PONTO) : undefined,
+    tipo: tipoInicial, nome: '', whatsapp: '', status: (tipoInicial === 'ponto' || tipoInicial === 'rede') ? 'teste' : 'candidato', dataEntrada: hoje,
+    noites: [], diaVisita: (tipoInicial === 'ponto' || tipoInicial === 'rede') ? 2 : undefined,
+    fimTeste: (tipoInicial === 'ponto' || tipoInicial === 'rede') ? somarDias(hoje, DIAS_TESTE_PONTO) : undefined,
   })
   const mudar = <K extends keyof Parceiro>(k: K, v: Parceiro[K]) => setP({ ...p, [k]: v })
   const alternarNoite = (d: number) => mudar('noites', p.noites?.includes(d) ? p.noites.filter((n) => n !== d) : [...(p.noites ?? []), d].sort())
@@ -48,7 +48,7 @@ export function FormParceiro({ parceiro, tipoInicial, hoje, aoSalvar }: {
   return (
     <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void salvar() }}>
       {!parceiro && <Escolha rotulo="Tipo" valor={p.tipo} aoMudar={(t) => mudar('tipo', t)} opcoes={TIPOS} />}
-      <Campo rotulo={p.tipo === 'ponto' ? 'Nome do ponto' : 'Nome'} required value={p.nome} onChange={(e) => mudar('nome', e.target.value)} />
+      <Campo rotulo={(p.tipo === 'ponto' || p.tipo === 'rede') ? 'Nome do local' : 'Nome'} required value={p.nome} onChange={(e) => mudar('nome', e.target.value)} />
       <Campo rotulo="WhatsApp" type="tel" inputMode="tel" value={p.whatsapp} onChange={(e) => mudar('whatsapp', e.target.value)} placeholder="65 99999-0000" />
       <Escolha rotulo="Status" valor={p.status} aoMudar={(s) => mudar('status', s)} opcoes={STATUS} />
       <Campo rotulo="Entrou em" type="date" value={p.dataEntrada} onChange={(e) => mudar('dataEntrada', e.target.value)} />
@@ -76,7 +76,7 @@ export function FormParceiro({ parceiro, tipoInicial, hoje, aoSalvar }: {
         </>
       )}
 
-      {p.tipo === 'ponto' && (
+      {(p.tipo === 'ponto' || p.tipo === 'rede') && (
         <>
           <label className="block space-y-1">
             <span className="rotulo">Polo</span>

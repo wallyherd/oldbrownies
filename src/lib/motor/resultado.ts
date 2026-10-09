@@ -20,10 +20,19 @@ export interface EntradaResultado {
   faturamento: number
   fixos: FixosPorGrupo
   provisaoImposto: number
+  custoFuncionario?: number
+  mensalidadeIfood?: number
 }
 
 export function resultadoMes(e: EntradaResultado) {
-  const fixosEmpresa = e.fixos.ponto + e.fixos.empresa
+  // A Maria Eduarda já deve vir desativada no banco, mas por segurança não contamos se houver funcionária.
+  let fixosEmpresa = e.fixos.ponto + e.fixos.empresa
+  if (e.custoFuncionario !== undefined) {
+    fixosEmpresa += e.custoFuncionario
+  }
+  if (e.mensalidadeIfood) {
+    fixosEmpresa += e.mensalidadeIfood
+  }
   const imposto = e.faturamento * e.provisaoImposto
   const lucroEmpresa = e.margem - fixosEmpresa - imposto
   const sobra = lucroEmpresa - e.fixos.pessoal - e.fixos.divida
@@ -31,8 +40,18 @@ export function resultadoMes(e: EntradaResultado) {
   return { fixosEmpresa, imposto, lucroEmpresa, sobra, faltaParaOAzul }
 }
 
-export function equilibrioEmPecas(custoDaParte: number, lucroLoja: number): number {
-  return lucroLoja > 0 ? custoDaParte / lucroLoja : Infinity
+export function equilibrioEmPecas(
+  custosMês: number, // fixos da empresa + contas pessoais + dívida + etc
+  precoMedio: number,
+  taxaMaquininha: number,
+  provisaoImposto: number,
+  custoVariavelMixPequeno: number,
+  comissaoLoja: number,
+  fatorDsr: number,
+  encargosFolha: number
+): number {
+  const lucroLoja = precoMedio * (1 - taxaMaquininha - provisaoImposto) - custoVariavelMixPequeno - precoMedio * comissaoLoja * (1 + fatorDsr) * (1 + encargosFolha)
+  return lucroLoja > 0 ? custosMês / lucroLoja : Infinity
 }
 
 // Ritmo linear: o que foi feito até hoje, esticado para o mês inteiro.
