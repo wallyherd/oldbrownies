@@ -30,6 +30,8 @@ import { Equipe } from '@/features/mais/Equipe'
 import { IfoodMetricas } from '@/features/mais/IfoodMetricas'
 import { Convites } from '@/features/mais/Convites'
 import { Dados } from '@/features/mais/Dados'
+import { MinhaSemana } from '@/features/equipe/MinhaSemana'
+import { aplicarAtualizacaoV3 } from '@/lib/db/migracao_v3'
 
 const INICIO: Record<Papel, string> = { dono: '/hoje', equipe: '/hoje', mentor: '/painel', parceiro: '/entrar' }
 
@@ -136,10 +138,18 @@ const ROTAS: Array<{ caminho: string; papeis: Papel[]; tela: ReactNode }> = [
   { caminho: '/mais/ifood', papeis: GESTAO, tela: <IfoodMetricas /> },
   { caminho: '/mais/convites', papeis: GESTAO, tela: <Convites /> },
   { caminho: '/mais/dados', papeis: TODOS, tela: <Dados /> },
+  { caminho: '/minha-semana', papeis: ['equipe', 'dono'], tela: <MinhaSemana /> },
 ]
 
 function AreaLogada() {
-  useEffect(() => iniciarSincronizacao(), [])
+  const sessao = useSessaoOpcional()
+  useEffect(() => {
+    const unsub = iniciarSincronizacao()
+    if (sessao) {
+      void aplicarAtualizacaoV3(sessao.empresaId, sessao.userId)
+    }
+    return unsub
+  }, [sessao?.empresaId, sessao?.userId])
 
   return (
     <CadastrosProvider carregando={<Carregando />}>

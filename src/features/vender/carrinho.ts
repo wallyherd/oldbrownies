@@ -21,6 +21,7 @@ export const PAGAMENTOS: Array<{ valor: Pagamento; rotulo: string }> = [
   { valor: 'dinheiro', rotulo: 'Dinheiro' },
   { valor: 'pix', rotulo: 'Pix' },
   { valor: 'maquininha', rotulo: 'Maquininha' },
+  { valor: 'ifood', rotulo: 'iFood' },
 ]
 
 export function itemDeProduto(p: Produto, cad: Cadastros): Omit<ItemCarrinho, 'qtd'> {

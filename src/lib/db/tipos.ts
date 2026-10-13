@@ -12,9 +12,9 @@ export interface Base {
 
 export type Papel = 'dono' | 'mentor' | 'equipe' | 'parceiro'
 export type CodigoTamanho = 'grande' | 'pequeno'
-export type CodigoCanal = 'loja' | 'rota' | 'feira' | 'evento' | 'ifood' | 'vendedor' | 'motorista' | 'ponto'
-export type Pagamento = 'dinheiro' | 'pix' | 'maquininha'
-export type TipoParceiro = 'vendedor' | 'motorista' | 'ponto'
+export type CodigoCanal = 'loja' | 'rota' | 'feira' | 'evento' | 'ifood' | 'vendedor' | 'motorista' | 'ponto' | 'rede'
+export type Pagamento = 'dinheiro' | 'pix' | 'maquininha' | 'ifood'
+export type TipoParceiro = 'vendedor' | 'motorista' | 'ponto' | 'rede'
 export type StatusParceiro = 'candidato' | 'treino' | 'teste' | 'ativo' | 'pausado' | 'saiu'
 export type TipoTarefa = 'escola' | 'mensagem' | 'operacao' | 'captacao' | 'feira' | 'rota' | 'preparo' | 'ifood' | 'mentalidade' | 'esforco'
 export type TipoMovimento =
@@ -351,4 +351,24 @@ export interface Zona extends Base {
   nome: string
   ruas: string
   melhoresNoites: string
+}
+
+export interface MetaSemana extends Base {
+  inicio: string // YYYY-MM-DD (segunda-feira)
+  metaRS: number
+  superMetaRS: number // meta + 20%
+  pedidosIfood?: number
+  nota?: string
+}
+
+export interface PlacarIfood extends Base {
+  semana: string // YYYY-MM-DD
+  notaMedia: number
+  avaliacoes90d: number
+  pedidos90d: number
+  cancelamentos: number
+  cancelamentosFalhaLoja: number
+  pedidosComErro: number
+  tempoMedioPreparoMin?: number
+  obs?: string
 }

@@ -15,7 +15,6 @@ export interface LinhaTarefa {
   origem?: TarefaAvulsa['origem']
   rotinaTarefaId?: string
   tarefaAvulsaId?: string
-  tarefaAvulsaId?: string
   item?: ChecklistItem
   status: 'feito' | 'pulado' | 'pendente'
   papelOriginal: 'dono' | 'equipe'

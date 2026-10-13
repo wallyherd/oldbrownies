@@ -18,6 +18,7 @@ import { montarDia, filtrarPorTurno, type DadosChecklist, type LinhaTarefa } fro
 
 export const NOME_TIPO: Record<TipoTarefa, string> = {
   escola: 'Escola', rota: 'Rota', captacao: 'Captação', mensagem: 'Mensagens', operacao: 'Operação', feira: 'Feira', preparo: 'Preparo',
+  ifood: 'iFood', mentalidade: 'Mentalidade', esforco: 'Esforço',
 }
 
 function diasDaSemana(segunda: string) {

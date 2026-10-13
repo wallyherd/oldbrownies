@@ -86,7 +86,9 @@ export function Vender() {
   const cad = useCadastros()
   const [params, setParams] = useSearchParams()
   const equipe = sessao.papel === 'equipe'
-  const canal = (equipe ? 'loja' : (params.get('canal') as CodigoCanal)) || 'loja'
+  const canaisVisiveis = equipe ? CANAIS_VENDA.filter((c) => c.valor === 'loja' || c.valor === 'ifood') : CANAIS_VENDA
+  const canalParam = params.get('canal') as CodigoCanal
+  const canal = (canaisVisiveis.some((c) => c.valor === canalParam) ? canalParam : canaisVisiveis[0].valor) || 'loja'
   const [tamanhosPorCanal, setTamanhosPorCanal] = useState<Partial<Record<CodigoCanal, CodigoTamanho>>>(lerTamanhosSalvos)
   const [confirmarAbaixo, setConfirmarAbaixo] = useState<Pagamento | null>(null)
   const [enviando, setEnviando] = useState(false)
@@ -148,17 +150,17 @@ export function Vender() {
       aoTocar={() => carrinho.adicionar(itemDeProduto(p, cad))} />
   )
   const cardapio = canal === 'loja' || canal === 'ifood'
-  const noCardapio = (p: Produto) => canal === 'loja' || !!p.ifood
+  const noCardapio = (p: Produto) => canal === 'loja' || (p.vendeNoIfood ?? !!p.ifood)
   const temBebida = carrinho.itens.some((i) => i.produtoId && cad.produtoPorId.get(i.produtoId)?.tipo === 'bebida')
   const sugestoes = cad.produtos.filter((p) => ['Café', 'Capuccino', 'Old Capuccino'].includes(p.nome))
 
   return (
     <>
-      <Tela titulo="Vender" subtitulo={equipe ? 'Balcão da loja' : 'Canal → produto → pagamento'}
+      <Tela titulo="Vender" subtitulo={equipe ? (canal === 'ifood' ? 'iFood' : 'Balcão da loja') : 'Canal → produto → pagamento'}
         acao={<Link to="/repasse" className="flex min-h-12 items-center gap-2 rounded-deco border border-fio px-3 text-[14px] font-bold"><Truck className="size-5" aria-hidden />Repasse</Link>}>
-        {!equipe && (
-          <div role="radiogroup" aria-label="Canal" className="grid grid-cols-5 gap-1">
-            {CANAIS_VENDA.map((c) => (
+        {canaisVisiveis.length > 1 && (
+          <div role="radiogroup" aria-label="Canal" className={cx('grid gap-1', equipe ? 'grid-cols-2' : 'grid-cols-5')}>
+            {canaisVisiveis.map((c) => (
               <button key={c.valor} type="button" role="radio" aria-checked={canal === c.valor} onClick={() => mudarCanal(c.valor)}
                 className={cx('min-h-12 sm:min-h-toque rounded-deco border px-0.5 text-[12px] sm:text-[15px] font-bold active:scale-[0.97] touch-manipulation truncate transition-all',
                   canal === c.valor ? 'border-osso bg-osso text-tinta' : 'border-fio')}>
@@ -267,9 +269,12 @@ export function Vender() {
               <span className="text-cinza">{numero(resumo.pecas)} itens</span>
               <span className="text-2xl font-bold">{reais(resumo.total)}</span>
             </div>
+            {canal === 'ifood' && (resumo.porPagamento.ifood?.lucro ?? 0) < 5 && (
+              <div className="mb-2"><Aviso tom="alerta">Aviso: pedido deixa menos de R$ 5,00 ({reais(resumo.porPagamento.ifood?.lucro ?? 0)}).</Aviso></div>
+            )}
             <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-              {PAGAMENTOS.map((p) => {
-                const lucro = resumo.porPagamento[p.valor].lucro
+              {(canal === 'ifood' ? PAGAMENTOS.filter((p) => p.valor !== 'maquininha') : PAGAMENTOS.filter((p) => p.valor !== 'ifood')).map((p) => {
+                const lucro = resumo.porPagamento[p.valor]?.lucro ?? 0
                 const confirmando = confirmarAbaixo === p.valor
                 return (
                   <button key={p.valor} type="button" disabled={bloqueado || enviando} onClick={() => pagar(p.valor)}

@@ -55,7 +55,7 @@ function Linha({ linha, data, destaque, somenteLeitura, aoPular }: {
   const atalho = linha.atalho ? ATALHOS[linha.atalho] : undefined
   const rotuloStatus = linha.status === 'feito' ? 'feita' : linha.status === 'pulado' ? 'pulada' : 'pendente'
   const sessao = useSessao()
-  const eDeOutroPapel = linha.papelOriginal && linha.papelOriginal !== sessao.papel && linha.papelOriginal !== 'mentor'
+  const eDeOutroPapel = linha.papelOriginal && (linha.papelOriginal as string) !== sessao.papel && sessao.papel !== 'mentor'
 
   return (
     <li className={cx('flex items-stretch gap-2 border-b border-fio', destaque && 'border-l-4 border-l-osso bg-carvao')}>

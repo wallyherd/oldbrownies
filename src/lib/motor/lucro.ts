@@ -1,10 +1,10 @@
 // B5.5 — lucro por venda e por canal (camada 3).
 import type { CodigoCanal, Pagamento } from '@/lib/db/tipos'
 
-export interface TaxasCanal { taxaMaquininha: number; comissaoIfood: number | null; embalagemIfood: number }
+export interface TaxasCanal { taxaMaquininha: number; comissaoIfood: number | null; embalagemIfood?: number }
 
 export const CANAIS_DIRETOS: CodigoCanal[] = ['loja', 'rota', 'feira', 'evento', 'ifood']
-export const CANAIS_PARCEIROS: CodigoCanal[] = ['vendedor', 'motorista', 'ponto']
+export const CANAIS_PARCEIROS: CodigoCanal[] = ['vendedor', 'motorista', 'ponto', 'rede']
 
 export function ehCanalParceiro(canal: CodigoCanal): boolean {
   return CANAIS_PARCEIROS.includes(canal)
@@ -32,7 +32,7 @@ export function resumoVenda(itens: ItemParaLucro[], canal: CodigoCanal, pagament
   const custoBase = itens.reduce((s, i) => s + i.qtd * i.custoUnitario, 0)
   const taxaCartao = pagamento === 'maquininha' ? bruto * taxas.taxaMaquininha : 0
   const taxaIfood = canal === 'ifood' ? bruto * (taxas.comissaoIfood ?? 0) : 0
-  const custo = canal === 'ifood' && bruto > 0 ? custoBase + taxas.embalagemIfood : custoBase
+  const custo = canal === 'ifood' && bruto > 0 ? custoBase + (taxas.embalagemIfood ?? 1) : custoBase
   const liquido = bruto - taxaCartao - taxaIfood
   return { bruto, liquido, custo, lucro: liquido - custo }
 }

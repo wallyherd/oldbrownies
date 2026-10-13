@@ -1,5 +1,4 @@
-import type { Funcionario, MudancaFase } from '@/lib/db/tipos'
-import { somarDias } from './dia'
+import type { Funcionario } from '@/lib/db/tipos'
 
 export type FaseFuncionario = 'experiencia' | 'nivel1' | 'nivel2' | 'nivel3'
 

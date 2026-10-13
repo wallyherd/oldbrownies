@@ -26,7 +26,7 @@ const NAV: Record<Papel, ItemNav[]> = {
     { para: '/vender', rotulo: 'Vender', icone: CircleDollarSign },
     { para: '/producao', rotulo: 'Produção', icone: Wheat },
     { para: '/estoque', rotulo: 'Estoque', icone: Boxes },
-    { para: '/mais', rotulo: 'Mais', icone: Menu },
+    { para: '/minha-semana', rotulo: 'Minha semana', icone: Trophy },
   ],
   mentor: [
     { para: '/painel', rotulo: 'Painel', icone: Gauge },

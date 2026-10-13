@@ -2,20 +2,18 @@ import { useState } from 'react'
 import { Tela, Secao } from '@/components/ui/Tela'
 import { Botao, Campo } from '@/components/ui/basicos'
 import { useCadastros } from '@/lib/dados/cadastros'
-import { gravar } from '@/lib/sync/gravar'
-import { novoId, op } from '@/lib/sync/gravar'
+import { gravar, novoId, op } from '@/lib/sync/gravar'
 import type { Funcionario } from '@/lib/db/tipos'
 import { diasFaltandoExperiencia } from '@/lib/motor/funcionario'
-import { diaComercial, somarDias } from '@/lib/motor/dia'
+import { diaComercial, inicioMes, somarDias, diasEntre } from '@/lib/motor/dia'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db/banco'
 import { useChecklist } from '@/lib/dados/hooks'
-import { inicioMes, somarDias, diasEntre } from '@/lib/motor/dia'
 import { montarDia } from '@/features/checklist/tarefas'
 
 export function Equipe() {
   const cad = useCadastros()
-  const hoje = diaComercial(new Date(), CONFIG.horaViradaDia)
+  const hoje = diaComercial(new Date(), cad.config.horaViradaDia)
   const mesAtual = inicioMes(hoje)
 
   // Fetch data for quality bonus
@@ -24,13 +22,13 @@ export function Equipe() {
   const checklist = useChecklist(mesAtual, hoje)
 
   return (
-    <Tela titulo="Equipe" voltarPara="/mais">
+    <Tela titulo="Equipe" voltar>
       <Secao titulo="Funcionários Ativos">
         {cad.funcionarios.length === 0 ? (
           <p className="p-4 text-cinza text-sm text-center">Nenhum funcionário cadastrado.</p>
         ) : (
           <div className="space-y-4 p-4">
-            {cad.funcionarios.map(f => (
+            {cad.funcionarios.map((f) => (
               <FichaFuncionario 
                 key={f.id} 
                 funcionario={f} 
@@ -44,7 +42,7 @@ export function Equipe() {
         )}
       </Secao>
       <Secao titulo="Adicionar Funcionário">
-        <FormAdicionar />
+        <FormAdicionar horaViradaDia={cad.config.horaViradaDia} />
       </Secao>
     </Tela>
   )
@@ -53,7 +51,11 @@ export function Equipe() {
 function FichaFuncionario({ 
   funcionario: f, hoje, metricasIfood, cancelamentos, checklist 
 }: { 
-  funcionario: Funcionario, hoje: string, metricasIfood: any[], cancelamentos: any[], checklist: any 
+  funcionario: Funcionario
+  hoje: string
+  metricasIfood: Array<{ nota: number }>
+  cancelamentos: Array<{ culpa: string }>
+  checklist: any 
 }) {
   const faltam = diasFaltandoExperiencia(f, hoje)
   
@@ -73,7 +75,6 @@ function FichaFuncionario({
       if (obrigatorias.length > 0) {
         diasTotal++
         const feitas = obrigatorias.filter(t => t.status === 'feito').length
-        // Se fez todas as obrigatórias do dia
         if (feitas === obrigatorias.length) diasComChecklist++
       }
     }
@@ -84,7 +85,7 @@ function FichaFuncionario({
 
   async function promover(novaFase: Funcionario['fase'], motivo: 'fim_experiencia' | 'antecipacao' | 'criterio') {
     if (!window.confirm(`Mudar fase para ${novaFase}?`)) return
-    await gravar([
+    await gravar(
       op('funcionarios', { ...f, fase: novaFase, faseDesde: hoje }),
       op('mudancasFase', {
         id: novoId(),
@@ -93,9 +94,9 @@ function FichaFuncionario({
         de: f.fase,
         para: novaFase,
         motivo,
-        registradoPor: 'dono', // we don't have the current user here, but it's fine for the spec
+        registradoPor: 'dono',
       })
-    ])
+    )
   }
 
   return (
@@ -133,39 +134,38 @@ function FichaFuncionario({
 
       {f.fase === 'experiencia' && (
         <div className="flex gap-2 pt-2">
-          <Botao tamanho="sm" onClick={() => promover('nivel1', 'fim_experiencia')}>Efetivar Nível 1</Botao>
-          <Botao tamanho="sm" variante="fantasma" onClick={() => promover('nivel1', 'antecipacao')}>Antecipar Nível 1</Botao>
+          <Botao pequeno onClick={() => void promover('nivel1', 'fim_experiencia')}>Efetivar Nível 1</Botao>
+          <Botao pequeno variante="fantasma" onClick={() => void promover('nivel1', 'antecipacao')}>Antecipar Nível 1</Botao>
         </div>
       )}
       {f.fase === 'nivel1' && (
         <div className="flex gap-2 pt-2">
-          <Botao tamanho="sm" onClick={() => promover('nivel2', 'criterio')}>Promover Nível 2</Botao>
+          <Botao pequeno onClick={() => void promover('nivel2', 'criterio')}>Promover Nível 2</Botao>
         </div>
       )}
       {f.fase === 'nivel2' && (
         <div className="flex gap-2 pt-2">
-          <Botao tamanho="sm" onClick={() => promover('nivel3', 'criterio')}>Promover Nível 3</Botao>
+          <Botao pequeno onClick={() => void promover('nivel3', 'criterio')}>Promover Nível 3</Botao>
         </div>
       )}
     </div>
   )
 }
 
-function FormAdicionar() {
-  const hoje = diaComercial(new Date(), CONFIG.horaViradaDia)
+function FormAdicionar({ horaViradaDia }: { horaViradaDia: number }) {
+  const hoje = diaComercial(new Date(), horaViradaDia)
   const [nome, setNome] = useState('')
-  const [membroId, setMembroId] = useState('')
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault()
     if (!nome) return
     const id = novoId()
     const fimExp = somarDias(hoje, 59)
-    await gravar([
+    await gravar(
       op('funcionarios', {
         id,
         nome,
-        membroId,
+        membroId: novoId(),
         admissao: hoje,
         fimExperiencia: fimExp,
         fase: 'experiencia',
@@ -174,17 +174,19 @@ function FormAdicionar() {
         viagensDia: 2,
         diasMesVT: 26,
       })
-    ])
+    )
     setNome('')
-    setMembroId('')
   }
 
   return (
-    <form onSubmit={salvar} className="p-4 space-y-4">
-      <Campo label="Nome da Funcionária">
-        <input className="input" value={nome} onChange={e => setNome(e.target.value)} required />
-      </Campo>
-      <Botao tipo="submit" bloco>Cadastrar na Experiência</Botao>
+    <form onSubmit={(e) => void salvar(e)} className="p-4 space-y-4">
+      <Campo 
+        rotulo="Nome da Funcionária" 
+        value={nome} 
+        onChange={(e) => setNome(e.target.value)} 
+        required 
+      />
+      <Botao type="submit" bloco>Cadastrar na Experiência</Botao>
     </form>
   )
 }

@@ -117,6 +117,8 @@ export interface ProdutoSemente {
   composicao?: ComposicaoSemente[]
   observacao?: string
   ifood?: boolean
+  vendeNoIfood?: boolean
+  obsIfood?: string
 }
 
 const NUTELLA_40G = { descricao: 'Nutella 40 g', valor: 0.04 * 61.38 }
@@ -228,20 +230,21 @@ const JANELA_REST = 'Janela da escola + restaurante'
 const MALETA_ESCOLA = 'maleta na porta da escola'
 const MALETA_REST = 'maleta na porta e no restaurante da esquina'
 
-// C11 — a rotina da semana (39 tarefas). Atalhos: ver `ATALHOS` em features/checklist.
+// C11 — a rotina da semana do Gabriel (v3). Atalhos: ver `ATALHOS` em features/checklist.
 export const ROTINA: LinhaRotina[] = [
   [1, '06:00', '07:00', JANELA, 'maleta na porta', 'escola', true, 'venda:loja'],
   [1, '07:00', '09:00', 'Mensagem aos pontos', 'quanto vendeu, quanto tem, precisa repor? · contar o estoque', 'mensagem', true, 'mensagens:pontos'],
-  [1, '09:00', '11:00', 'Produção', 'com a Maria Eduarda: reposição dos pontos e estoque da semana', 'operacao', true, 'producao'],
+  [1, '09:00', '11:00', 'Produção com a funcionária', 'nas 2 primeiras semanas dela, junto (treino); depois, conferir as formas da semana e a lista de compras', 'operacao', true, 'producao'],
   [1, '11:00', '14:00', JANELA_REST, MALETA_REST, 'escola', true, 'venda:loja'],
-  [1, '14:00', '17:00', 'Reunião da semana', 'placar, relatório de vendas, zonas dos vendedores', 'operacao', true, 'placar'],
+  [1, '14:00', '17:00', 'Reunião da semana', 'placar em R$ da loja e do iFood (meta e super meta), bônus da semana da funcionária e lançar o placar do iFood (nota, avaliações, cancelamentos e erros do Portal)', 'operacao', true, 'placar'],
   [1, '17:00', '18:00', JANELA, MALETA_ESCOLA, 'escola', true, 'venda:loja'],
   [1, '18:00', '19:00', 'Separar as caixas', 'da entrega de terça', 'preparo', false, 'estoque'],
   [2, '06:00', '07:00', JANELA, MALETA_ESCOLA, 'escola', true, 'venda:loja'],
-  [2, '07:00', '09:00', 'Treino da equipe da loja', 'atendimento, porta da escola, iFood', 'operacao', false],
+  [2, '07:00', '09:00', 'Treino da equipe da loja', 'obrigatória nas 2 primeiras semanas da funcionária; depois, volta a não obrigatória', 'operacao', false],
   [2, '09:00', '11:00', 'Entrega nos pontos', 'contar junto, trocar, repor, receber', 'operacao', true, 'visita'],
   [2, '11:00', '14:00', JANELA_REST, MALETA_REST, 'escola', true, 'venda:loja'],
   [2, '14:00', '17:00', 'Captação presencial', 'salões do polo da semana', 'captacao', false, 'captacao'],
+  [2, '16:45', '17:00', 'Gatilho de produção', 'o estoque cobre sexta e sábado (previsão B5.12)? Se não, avisar a funcionária: a produção de quarta aumenta; se passar de 12 formas, a quinta vira dia de produção (8h–17h)', 'operacao', true, 'estoque'],
   [2, '17:00', '18:00', JANELA, 'sair às 17h45', 'escola', true, 'venda:loja'],
   [2, '18:00', '21:00', 'Feira do Jardim das Américas', '18h às 21h, na praça, com os vendedores em treino · depois, descanso', 'feira', true, 'venda:feira'],
   [3, '06:00', '07:00', JANELA, MALETA_ESCOLA, 'escola', true, 'venda:loja'],
@@ -254,7 +257,7 @@ export const ROTINA: LinhaRotina[] = [
   [3, '19:00', '23:00', 'ROTA', '19h às 23h, com vendedor em treino', 'rota', true, 'venda:rota'],
   [4, '06:00', '07:00', JANELA, MALETA_ESCOLA, 'escola', true, 'venda:loja'],
   [4, '07:00', '09:00', 'Mensagem para todos', 'vendedores, motoristas e pontos', 'mensagem', true, 'mensagens:todos'],
-  [4, '09:00', '11:00', 'Gatilho de produção', 'estoque não cobre sexta e sábado? reforço com a Maria Eduarda', 'operacao', true, 'estoque:previsao'],
+  [4, '09:00', '11:00', 'Conferir o fim de semana', 'estoque da loja, da rede e do iFood; pausar no iFood o sabor que vai faltar', 'operacao', true, 'estoque'],
   [4, '11:00', '14:00', JANELA_REST, MALETA_REST, 'escola', true, 'venda:loja'],
   [4, '14:00', '17:00', 'Reposição da rede', 'retirada na loja · captação à distância', 'operacao', false, 'repasse'],
   [4, '17:00', '18:00', JANELA, MALETA_ESCOLA, 'escola', true, 'venda:loja'],
@@ -271,15 +274,82 @@ export const ROTINA: LinhaRotina[] = [
   [7, '07:00', '10:00', 'Teste da missa da manhã (opcional)', '1 vez por mês, com a maleta', 'rota', false, 'venda:evento'],
 ]
 
+// 2.10(b) A funcionária — rotina nova (papel equipe, 35 tarefas)
+export const ROTINA_EQUIPE: LinhaRotina[] = [
+  // Segunda
+  [1, '07:00', '07:30', 'Separar a produção', 'conferir as formas da semana (lista do Gabriel) e separar os insumos', 'operacao', true, 'producao'],
+  [1, '07:30', '11:00', 'Produção', '2 ou 3 fornadas (8 a 12 formas) e os salgados do dia; etiqueta com sabor e data em tudo; lançar a produção', 'operacao', true, 'producao'],
+  [1, '11:00', '11:15', 'Abrir o balcão e o iFood', 'vitrine montada, validade conferida, iFood ligado, celular no carregador com som no máximo', 'operacao', true],
+  [1, '11:00', '14:00', 'Saída da escola', 'oferecer o combo com bebida gelada em toda venda; amostra de recorte no movimento', 'escola', true, 'venda:loja'],
+  [1, '11:00', '15:30', 'Pedidos do iFood', 'aceitar assim que tocar; pronto em até 10 min; lacre com o nome e cartão; responder as avaliações novas', 'ifood', true, 'venda:loja'],
+  [1, '14:00', '15:30', 'Cortar, etiquetar e guardar', 'e limpar a cozinha; anotar o que faltou na lista de compras', 'operacao', true, 'estoque'],
+  [1, '15:30', '16:00', 'Fechamento', 'iFood desligado às 15h30; vendas anotadas; caixa conferido', 'operacao', true],
+
+  // Terça
+  [2, '12:00', '12:30', 'Abertura', 'validade conferida, vitrine montada, iFood ligado', 'operacao', true],
+  [2, '12:30', '19:30', 'Balcão e iFood', 'aceitar o pedido assim que tocar; pronto em até 10 min; lacre e cartão; responder as avaliações novas', 'ifood', true, 'venda:loja'],
+  [2, '14:00', '16:00', 'Limpeza pesada', 'cozinha e salão', 'operacao', true],
+  [2, '16:00', '16:15', 'Stories do balcão', 'fornada, vitrine cheia, cliente com o brownie; repostar quem marcar', 'operacao', false],
+  [2, '17:00', '18:00', 'Saída da escola', 'combo com bebida gelada em toda venda', 'escola', true, 'venda:loja'],
+  [2, '19:30', '20:00', 'Fechamento', 'iFood desligado às 19h30; vendas anotadas; caixa conferido', 'operacao', true],
+
+  // Quarta
+  [3, '07:00', '07:30', 'Separar a produção', 'conferir as formas da semana (lista do Gabriel) e separar os insumos', 'operacao', true, 'producao'],
+  [3, '07:30', '11:00', 'Produção', '2 ou 3 fornadas (8 a 12 formas) e os salgados do dia; etiqueta com sabor e data em tudo; lançar a produção', 'operacao', true, 'producao'],
+  [3, '11:00', '11:15', 'Abrir o balcão e o iFood', 'vitrine montada, validade conferida, iFood ligado, celular no carregador com som no máximo', 'operacao', true],
+  [3, '11:00', '14:00', 'Saída da escola', 'oferecer o combo com bebida gelada em toda venda; amostra de recorte no movimento', 'escola', true, 'venda:loja'],
+  [3, '11:00', '15:30', 'Pedidos do iFood', 'aceitar assim que tocar; pronto em até 10 min; lacre com o nome e cartão; responder as avaliações novas', 'ifood', true, 'venda:loja'],
+  [3, '14:00', '15:30', 'Cortar, etiquetar e guardar', 'e limpar a cozinha; anotar o que faltou na lista de compras', 'operacao', true, 'estoque'],
+  [3, '15:30', '16:00', 'Fechamento', 'iFood desligado às 15h30; vendas anotadas; caixa conferido', 'operacao', true],
+
+  // Quinta
+  [4, '12:00', '12:30', 'Abertura', 'validade conferida, vitrine montada, iFood ligado', 'operacao', true],
+  [4, '12:30', '19:30', 'Balcão e iFood', 'aceitar o pedido assim que tocar; pronto em até 10 min; lacre e cartão; responder as avaliações novas', 'ifood', true, 'venda:loja'],
+  [4, '14:00', '15:00', 'Compras do fim de semana', 'com a lista e o orçamento da semana', 'operacao', true],
+  [4, '16:00', '16:15', 'Stories do balcão', 'fornada, vitrine cheia, cliente com o brownie; repostar quem marcar', 'operacao', false],
+  [4, '17:00', '18:00', 'Saída da escola', 'combo com bebida gelada em toda venda', 'escola', true, 'venda:loja'],
+  [4, '19:30', '20:00', 'Fechamento', 'iFood desligado às 19h30; vendas anotadas; caixa conferido', 'operacao', true],
+
+  // Sexta
+  [5, '12:00', '12:30', 'Abertura', 'validade conferida, vitrine montada, iFood ligado', 'operacao', true],
+  [5, '12:30', '20:30', 'Balcão e iFood', 'aceitar o pedido assim que tocar; pronto em até 10 min; lacre e cartão; responder as avaliações novas', 'ifood', true, 'venda:loja'],
+  [5, '16:00', '16:15', 'Stories do balcão', 'fornada, vitrine cheia, cliente com o brownie; repostar quem marcar', 'operacao', false],
+  [5, '17:00', '18:00', 'Saída da escola', 'combo com bebida gelada em toda venda', 'escola', true, 'venda:loja'],
+  [5, '20:30', '21:00', 'Fechamento', 'iFood desligado às 20h30; vendas anotadas; caixa conferido', 'operacao', true],
+
+  // Sábado
+  [6, '14:00', '14:30', 'Abertura', 'validade conferida, vitrine montada, iFood ligado', 'operacao', true],
+  [6, '14:30', '19:45', 'Balcão e iFood', 'aceitar o pedido assim que tocar; pronto em até 10 min; lacre e cartão; responder as avaliações novas', 'ifood', true, 'venda:loja'],
+  [6, '16:00', '16:15', 'Stories do balcão', 'fornada, vitrine cheia, cliente com o brownie; repostar quem marcar', 'operacao', false],
+  [6, '19:45', '20:15', 'Fechamento', 'iFood desligado às 19h45; vendas anotadas; caixa conferido', 'operacao', true],
+]
+
 export const TAREFAS_AVULSAS: Array<{ origem: 'mentor' | 'sistema'; titulo: string; detalhe: string; quando: 'segunda' | 'semana' | 'outubro' }> = [
   {
-    origem: 'sistema', quando: 'segunda', titulo: 'Reativar o iFood',
-    detalhe: 'Fotos no estilo da marca, cardápio enxuto, preço do app acima do balcão, aberto 11h–14h e 19h–23h',
+    origem: 'sistema', quando: 'semana', titulo: 'Configurar o iFood',
+    detalhe: 'Conta e repasse mensal · logo e capa · horários (2.9) · preparo de 10 min · cardápio em 5 categorias com os combos no topo · foto em todos os itens · pausar item que acabou · Gestor de Pedidos no celular da loja',
   },
-  { origem: 'mentor', quando: 'semana', titulo: 'Ligar para a gráfica: a etiqueta custa R$ 0,80 ou R$ 0,20?', detalhe: 'Se for R$ 0,20, todo brownie fica R$ 0,60 mais barato' },
-  { origem: 'mentor', quando: 'semana', titulo: 'Confirmar a taxa real da maquininha', detalhe: 'Hoje o app usa 2,3%' },
-  { origem: 'mentor', quando: 'outubro', titulo: 'Trazer a primeira conta de energia do ponto', detalhe: 'Troca a estimativa de R$ 300' },
-  { origem: 'mentor', quando: 'outubro', titulo: 'Levantar o saldo de cada um dos 25 credores', detalhe: 'Hoje a dívida é a média do extrato: R$ 1.630 por mês' },
+  {
+    origem: 'sistema', quando: 'semana', titulo: 'Comprar o kit de embalagem do iFood',
+    detalhe: 'Saco kraft, lacre, cartão, guardanapo e lançar o custo real em embalagemIfood',
+  },
+  { origem: 'mentor', quando: 'semana', titulo: 'Conferir na nota o custo da Coca e da Fanta mini', detalhe: 'Estimado em R$ 2,50' },
+  { origem: 'mentor', quando: 'semana', titulo: 'Pôr o @ do Instagram no cartão que vai no pedido do iFood', detalhe: 'Antes de abrir o iFood' },
+  { origem: 'mentor', quando: 'outubro', titulo: 'Ficha técnica do pão de queijo e da esfirra', detalhe: 'Custo máximo de R$ 1,71 e R$ 2,04 para deixar 40% no iFood' },
+  { origem: 'sistema', quando: 'semana', titulo: 'Convidar a funcionária para o app', detalhe: 'Papel equipe e criar a ficha dela (2.6) com a data de admissão' },
+  { origem: 'sistema', quando: 'segunda', titulo: 'Desativar o acesso da Maria Eduarda', detalhe: 'Já concluído na transição para a v3' },
+  { origem: 'sistema', quando: 'semana', titulo: 'Encomendas do Dia do Professor (13 e 14/10)', detalhe: 'Old Box com o cartão Obrigado, professor(a) e Dupla da Casa com laço · meta de 10 caixas' },
+  { origem: 'sistema', quando: 'outubro', titulo: 'Halloween (31/10)', detalhe: 'Tradicional decorado, pelo mesmo preço, e foto para o Instagram' },
+  { origem: 'sistema', quando: 'outubro', titulo: 'Cartão fidelidade da loja', detalhe: '10 carimbos = 1 tradicional' },
+  { origem: 'mentor', quando: 'semana', titulo: 'Confirmar a composição nova da Old Box (sortida) também no balcão', detalhe: '2 tradicionais + cookie + castanha' },
+]
+
+export const NOTAS_MENTOR = [
+  'Regularização: sair do MEI para ME antes de assinar a carteira com comissão — no MEI, o empregado recebe exclusivamente salário mínimo ou piso da categoria.',
+  'Conferir o piso da convenção coletiva da categoria: o salário da experiência não pode ficar abaixo dele.',
+  'Contrato de experiência de 60 dias por escrito, com a passagem para R$ 1.800 + bônus no dia 61 e o critério de antecipação.',
+  'Vale-transporte em crédito do cartão de transporte, não em dinheiro.',
+  'Saída da Maria Eduarda por escrito, com recibo do que foi pago.',
 ]
 
 export const ZONAS = [

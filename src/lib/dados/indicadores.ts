@@ -64,7 +64,7 @@ export const CANAIS_PLACAR: CanalPlacar[] = ['loja', 'vendedor', 'motorista', 'p
 export const CANAIS_SEM_META: CodigoCanal[] = ['rota', 'feira', 'evento', 'ifood']
 
 export function contarAtivos(parceiros: Parceiro[]) {
-  const ativos = { vendedor: 0, motorista: 0, ponto: 0 }
+  const ativos = { vendedor: 0, motorista: 0, ponto: 0, rede: 0 }
   for (const p of parceiros) if (p.status === 'ativo') ativos[p.tipo] += 1
   return ativos
 }
@@ -266,7 +266,7 @@ export function resultadoDoMes(resumosMes: ResumoVenda[], cad: Pick<Cadastros, '
 }
 
 // —— Alertas do Hoje ——
-export interface Alerta { tom: 'alerta' | 'aviso'; texto: string; link?: string }
+export interface Alerta { tom: 'alerta' | 'aviso' | 'ok'; texto: string; link?: string }
 
 export function montarAlertas(p: {
   estoque: ReturnType<typeof resumirEstoque>

@@ -40,18 +40,20 @@ export function resultadoMes(e: EntradaResultado) {
   return { fixosEmpresa, imposto, lucroEmpresa, sobra, faltaParaOAzul }
 }
 
-export function equilibrioEmPecas(
-  custosMês: number, // fixos da empresa + contas pessoais + dívida + etc
+export function lucroLojaEquilibrio(
   precoMedio: number,
   taxaMaquininha: number,
   provisaoImposto: number,
   custoVariavelMixPequeno: number,
-  comissaoLoja: number,
-  fatorDsr: number,
-  encargosFolha: number
+  comissaoLoja = 0.04,
+  fatorDsr = 0.20,
+  encargosFolha = 0.30,
 ): number {
-  const lucroLoja = precoMedio * (1 - taxaMaquininha - provisaoImposto) - custoVariavelMixPequeno - precoMedio * comissaoLoja * (1 + fatorDsr) * (1 + encargosFolha)
-  return lucroLoja > 0 ? custosMês / lucroLoja : Infinity
+  return precoMedio * (1 - taxaMaquininha - provisaoImposto) - custoVariavelMixPequeno - precoMedio * comissaoLoja * (1 + fatorDsr) * (1 + encargosFolha)
+}
+
+export function equilibrioEmPecas(custosMes: number, lucroLoja: number): number {
+  return lucroLoja > 0 ? custosMes / lucroLoja : Infinity
 }
 
 // Ritmo linear: o que foi feito até hoje, esticado para o mês inteiro.

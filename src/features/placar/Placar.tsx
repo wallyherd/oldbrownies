@@ -42,7 +42,6 @@ export function Placar() {
   const meta = pAtual.metaTotal
   const superMeta = Math.ceil(meta * 1.2)
   const fez = pAtual.realizado
-  const bonus = fez >= superMeta ? 100 : fez >= meta ? 50 : 0
 
   return (
     <Tela titulo="Placar da semana" subtitulo={`${dataCurta(segunda)} a ${dataCurta(domingo)} · a reunião de segunda`}>

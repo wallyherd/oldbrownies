@@ -42,7 +42,10 @@ function sementesDaOperacao(hoje: string): Op[] {
     ...S.CUSTOS_FIXOS.map((c) => op('custosFixos', c)),
     ...S.ROTINA.map(([diaSemana, inicio, fim, titulo, detalhe, tipo, obrigatoria, atalho], ordem) =>
       op('rotinaTarefas', { diaSemana, inicio, fim, titulo, detalhe, tipo, obrigatoria, atalho, papel: 'dono', ordem, ativa: true })),
+    ...S.ROTINA_EQUIPE.map(([diaSemana, inicio, fim, titulo, detalhe, tipo, obrigatoria, atalho], ordem) =>
+      op('rotinaTarefas', { diaSemana, inicio, fim, titulo, detalhe, tipo, obrigatoria, atalho, papel: 'equipe', ordem, ativa: true })),
     ...S.TAREFAS_AVULSAS.map(({ quando, ...t }) => op('tarefasAvulsas', { ...t, data: dataDaTarefa(quando, hoje), papel: 'dono' })),
+    ...S.NOTAS_MENTOR.map((texto) => op('notasMentor', { texto })),
     ...S.ZONAS.map((z) => op('zonas', z)),
     ...S.PARCEIROS.map((p) => op('parceiros', p)),
     op('configsMentor', { limitesFaturamento: S.LIMITES_FATURAMENTO }),
