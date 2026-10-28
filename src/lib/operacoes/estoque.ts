@@ -46,23 +46,32 @@ export function baixar(
   return retiradas
 }
 
+export interface ItemProducao {
+  saborId: string
+  tamanho: CodigoTamanho
+  formas: number
+  pecas?: number
+}
+
 export interface NovaProducao {
   data: string
   responsavel: string
   diariaPaga: number
-  itens: Array<{ saborId: string; tamanho: CodigoTamanho; formas: number }>
+  itens: ItemProducao[]
 }
 
 export async function registrarProducao(p: NovaProducao, ctx: Contexto & { sabores: Map<string, Sabor>; pecasPorForma: Record<CodigoTamanho, number> }) {
   const producaoId = novoId()
   const ops: Op[] = [op('producoes', { id: producaoId, data: p.data, responsavel: p.responsavel, diariaPaga: p.diariaPaga })]
-  for (const item of p.itens.filter((i) => i.formas > 0)) {
+  for (const item of p.itens.filter((i) => (i.pecas && i.pecas > 0) || i.formas > 0)) {
     const producaoItemId = novoId()
     const loteId = novoId()
-    const qtd = item.formas * ctx.pecasPorForma[item.tamanho]
+    const maxPecas = ctx.pecasPorForma[item.tamanho]
+    const qtd = item.pecas !== undefined ? item.pecas : Math.round(item.formas * maxPecas)
+    const formas = item.formas > 0 ? Number(item.formas.toFixed(4)) : Number((qtd / maxPecas).toFixed(4))
     const validade = ctx.sabores.get(item.saborId)?.validadeDias ?? 15
     ops.push(
-      op('producaoItens', { id: producaoItemId, producaoId, ...item }),
+      op('producaoItens', { id: producaoItemId, producaoId, saborId: item.saborId, tamanho: item.tamanho, formas }),
       op('lotes', { id: loteId, producaoItemId, saborId: item.saborId, tamanho: item.tamanho, qtdInicial: qtd, validadeAte: somarDias(p.data, validade) }),
       movimento(ctx, 'producao', producaoId, { saborId: item.saborId, tamanho: item.tamanho, loteId, qtd }),
     )

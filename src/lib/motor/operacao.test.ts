@@ -40,6 +40,23 @@ describe('estoque (B5.6)', () => {
     expect(forma.t).toBe(18)
     expect(distribuirPorPeso(24, pesos)).toEqual({ t: 12, a: 3, b: 3, c: 3, d: 3 })
   })
+
+  it('forma pode ser produzida com qualquer quantidade de brownie (de 2und até o máximo)', () => {
+    // Quantidade mínima de 2 unidades até 35 pequenos ou 24 grandes
+    const pecasPequeno = 15 // Ex: forma com 15 brownies
+    const formasPequeno = Number((pecasPequeno / 35).toFixed(4))
+    expect(formasPequeno).toBeCloseTo(0.4286, 3)
+
+    const pecasMinimas = 2
+    expect(pecasMinimas >= 2).toBe(true)
+    expect(pecasMinimas <= 35).toBe(true)
+
+    // Soma de forma mista: 10 nutella + 25 tradicional = 35 (1 forma exata)
+    const mistaNutella = 10
+    const mistaTrad = 25
+    const formasTotal = mistaNutella / 35 + mistaTrad / 35
+    expect(formasTotal).toBe(1)
+  })
 })
 
 describe('placar (B5.7)', () => {

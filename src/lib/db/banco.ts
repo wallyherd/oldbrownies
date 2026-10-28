@@ -39,6 +39,7 @@ export interface Registros {
   mudancasFase: T.MudancaFase
   metricasIfood: T.MetricasIfood
   cancelamentos: T.Cancelamento
+  gastos: T.Gasto
 }
 
 export type NomeTabela = keyof Registros
@@ -94,6 +95,7 @@ const INDICES: Record<NomeTabela, string> = {
   mudancasFase: `${COMUM}, funcionarioId`,
   metricasIfood: `${COMUM}, dataReferencia`,
   cancelamentos: `${COMUM}, data`,
+  gastos: `${COMUM}, data, categoria`,
 }
 
 export const TABELAS = Object.keys(INDICES) as NomeTabela[]
@@ -103,13 +105,18 @@ type Tabelas = { [K in NomeTabela]: Table<Registros[K], string> }
 // Declaração mesclada: cada tabela vira propriedade tipada (db.vendas, db.lotes…).
 interface Banco extends Tabelas {}
 
+const { gastos: _gastoIdx, ...INDICES_V1 } = INDICES
+
 class Banco extends Dexie {
   outbox!: Table<ItemOutbox, number>
   meta!: Table<Meta, string>
 
   constructor() {
     super('old-brownies')
-    this.version(1).stores({ ...INDICES, outbox: '++seq, tabela', meta: 'chave' })
+    this.version(1).stores({ ...INDICES_V1, outbox: '++seq, tabela', meta: 'chave' })
+    this.version(2).stores({
+      gastos: INDICES.gastos,
+    })
   }
 
   tabela<K extends NomeTabela>(nome: K): Table<Registros[K], string> {

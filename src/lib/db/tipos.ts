@@ -372,3 +372,11 @@ export interface PlacarIfood extends Base {
   tempoMedioPreparoMin?: number
   obs?: string
 }
+
+export interface Gasto extends Base {
+  data: string // YYYY-MM-DD
+  valor: number
+  categoria: string
+  descricao: string
+  pagamento: string
+}
