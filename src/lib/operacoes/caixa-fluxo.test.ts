@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  CATEGORIAS_ENTRADA,
   CATEGORIAS_SAIDA,
-  categoriaParaCanal,
-  formatarItensVendaCaixa,
   validarMovimentacao,
 } from './caixa'
 import { montarVenda, type ContextoVenda, type NovaVenda } from './vendas'
