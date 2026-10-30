@@ -587,7 +587,27 @@ create table if not exists public.cancelamentos (
   deleted_at timestamptz
 );
 
--- TRIGGERS DE UPDATED_AT EM TODAS AS 31 TABELAS
+-- 36. MOVIMENTACOES_CAIXA
+create table if not exists public.movimentacoes_caixa (
+  id uuid primary key default gen_random_uuid(),
+  empresa_id uuid not null,
+  data text not null,
+  tipo text not null check (tipo in ('entrada', 'saida')),
+  categoria text not null,
+  descricao text not null default '',
+  valor numeric not null default 0,
+  forma_pagamento text default '',
+  origem text not null default 'manual',
+  referencia_id uuid,
+  detalhes text default '',
+  registrado_por text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by text not null default '',
+  deleted_at timestamptz
+);
+
+-- TRIGGERS DE UPDATED_AT EM TODAS AS TABELAS
 do $$
 declare
   t text;
@@ -598,7 +618,7 @@ declare
     'perdas', 'amostras', 'contagens', 'custos_fixos', 'rotina_tarefas',
     'tarefas_avulsas', 'checklist_itens', 'recados_mentor', 'notas_mentor',
     'configs_mentor', 'promocoes', 'zonas',
-    'funcionarios', 'mudancas_fase', 'metricas_ifood', 'cancelamentos'
+    'funcionarios', 'mudancas_fase', 'metricas_ifood', 'cancelamentos', 'movimentacoes_caixa'
   ];
 begin
   foreach t in array tabelas loop
@@ -619,7 +639,7 @@ declare
     'perdas', 'amostras', 'contagens', 'custos_fixos', 'rotina_tarefas',
     'tarefas_avulsas', 'checklist_itens', 'recados_mentor', 'notas_mentor',
     'configs_mentor', 'promocoes', 'zonas',
-    'funcionarios', 'mudancas_fase', 'metricas_ifood', 'cancelamentos'
+    'funcionarios', 'mudancas_fase', 'metricas_ifood', 'cancelamentos', 'movimentacoes_caixa'
   ];
 begin
   foreach t in array tabelas loop
@@ -688,6 +708,7 @@ alter table public.funcionarios enable row level security;
 alter table public.mudancas_fase enable row level security;
 alter table public.metricas_ifood enable row level security;
 alter table public.cancelamentos enable row level security;
+alter table public.movimentacoes_caixa enable row level security;
 
 -- POLÍTICAS RLS: MEMBROS
 drop policy if exists "membros_select" on public.membros;
@@ -792,7 +813,7 @@ declare
     'canais', 'vendas', 'venda_itens', 'parceiros', 'visitas_ponto', 'perdas',
     'amostras', 'contagens', 'rotina_tarefas', 'tarefas_avulsas', 'checklist_itens',
     'recados_mentor', 'promocoes', 'zonas',
-    'funcionarios', 'mudancas_fase', 'metricas_ifood', 'cancelamentos'
+    'funcionarios', 'mudancas_fase', 'metricas_ifood', 'cancelamentos', 'movimentacoes_caixa'
   ];
 begin
   foreach t in array tabelas_padrao loop

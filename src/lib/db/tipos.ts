@@ -380,3 +380,20 @@ export interface Gasto extends Base {
   descricao: string
   pagamento: string
 }
+
+export type TipoMovimentacaoCaixa = 'entrada' | 'saida'
+export type OrigemCaixa = 'manual' | 'venda' | 'compra'
+
+export interface MovimentacaoCaixa extends Base {
+  data: string // YYYY-MM-DD ou ISO
+  tipo: TipoMovimentacaoCaixa
+  categoria: string
+  descricao: string
+  valor: number
+  formaPagamento?: string
+  origem: OrigemCaixa
+  referenciaId?: string
+  detalhes?: string
+  registradoPor: string
+}
+
