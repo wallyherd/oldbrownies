@@ -31,6 +31,7 @@ import { IfoodMetricas } from '@/features/mais/IfoodMetricas'
 import { Convites } from '@/features/mais/Convites'
 import { Dados } from '@/features/mais/Dados'
 import { MinhaSemana } from '@/features/equipe/MinhaSemana'
+import { Caixa } from '@/features/caixa/Caixa'
 import { aplicarAtualizacaoV3 } from '@/lib/db/migracao_v3'
 
 const INICIO: Record<Papel, string> = { dono: '/hoje', equipe: '/hoje', mentor: '/painel', parceiro: '/entrar' }
@@ -139,6 +140,7 @@ const ROTAS: Array<{ caminho: string; papeis: Papel[]; tela: ReactNode }> = [
   { caminho: '/mais/convites', papeis: GESTAO, tela: <Convites /> },
   { caminho: '/mais/dados', papeis: TODOS, tela: <Dados /> },
   { caminho: '/minha-semana', papeis: ['equipe', 'dono'], tela: <MinhaSemana /> },
+  { caminho: '/caixa', papeis: GESTAO, tela: <Caixa /> },
 ]
 
 function AreaLogada() {

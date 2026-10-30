@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import {
-  BookOpenCheck, Boxes, CalendarCheck, CircleDollarSign, Gauge, Menu, Plus, Trophy, Users, Wheat,
+  BookOpenCheck, Boxes, CalendarCheck, CircleDollarSign, Gauge, Menu, Plus, Trophy, Users, Wallet, Wheat,
   type LucideIcon,
 } from 'lucide-react'
 import type { Papel } from '@/lib/db/tipos'
@@ -17,8 +17,8 @@ const NAV: Record<Papel, ItemNav[]> = {
   dono: [
     { para: '/hoje', rotulo: 'Hoje', icone: CalendarCheck },
     { para: '/vender', rotulo: 'Vender', icone: CircleDollarSign },
+    { para: '/caixa', rotulo: 'Caixa', icone: Wallet },
     { para: '/rede', rotulo: 'Rede', icone: Users },
-    { para: '/estoque', rotulo: 'Estoque', icone: Boxes },
     { para: '/mais', rotulo: 'Mais', icone: Menu },
   ],
   equipe: [

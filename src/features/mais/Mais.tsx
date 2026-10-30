@@ -20,7 +20,7 @@ const GRUPOS: Array<{ titulo: string; itens: Item[] }> = [
       { para: '/placar', rotulo: 'Placar da semana', papeis: ['dono'] },
       { para: '/producao', rotulo: 'Produção', papeis: ['dono', 'mentor'] },
       { para: '/compras', rotulo: 'Lista de Compras', papeis: ['dono', 'equipe', 'mentor'] },
-      { para: '/estoque', rotulo: 'Estoque', papeis: ['mentor'] },
+      { para: '/estoque', rotulo: 'Estoque', papeis: ['dono', 'mentor'] },
       { para: '/visita', rotulo: 'Visita ao ponto', papeis: ['dono'] },
       { para: '/repasse', rotulo: 'Repasse a parceiro', papeis: ['dono', 'equipe'] },
     ],
@@ -28,6 +28,7 @@ const GRUPOS: Array<{ titulo: string; itens: Item[] }> = [
   {
     titulo: 'Números',
     itens: [
+      { para: '/caixa', rotulo: 'Fluxo de Caixa', detalhe: 'entradas, saídas, categorias e relatórios', papeis: ['dono', 'mentor'] },
       { para: '/mais/custos', rotulo: 'Custos', detalhe: 'custo do brownie e lucro por canal', papeis: ['dono', 'mentor'] },
       { para: '/mais/produtos', rotulo: 'Tabela da casa', detalhe: 'produtos, preços e promoções', papeis: ['dono', 'mentor', 'equipe'] },
       { para: '/mais/fixos', rotulo: 'Custos fixos', papeis: ['dono', 'mentor'] },
