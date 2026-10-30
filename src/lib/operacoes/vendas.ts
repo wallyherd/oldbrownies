@@ -32,6 +32,8 @@ export interface ContextoVenda {
   momento?: Date
 }
 
+import { categoriaParaCanal, formatarItensVendaCaixa } from './caixa'
+
 // Brownies que saem do estoque: o próprio item, ou os brownies da composição do combo.
 function browniesDoItem(item: ItemVenda, produtoPorId: Map<string, Produto>) {
   if (item.saborId && item.tamanho) return [{ saborId: item.saborId, tamanho: item.tamanho, qtd: item.qtd }]
@@ -50,7 +52,10 @@ export function montarVenda(v: NovaVenda, ctx: ContextoVenda, estoque: Estoque) 
     id: vendaId, data: momento.toISOString(), diaComercial: hoje, canal: v.canal, parceiroId: v.parceiroId,
     feiraNome: v.feiraNome, pagamento: v.pagamento, registradaPor: sessao.nome, observacao: v.observacao,
   })]
+  
+  let totalValor = 0
   for (const item of v.itens.filter((i) => i.qtd > 0)) {
+    totalValor += item.qtd * item.precoUnitario
     ops.push(op('vendaItens', { vendaId, ...item }))
     for (const b of browniesDoItem(item, ctx.produtoPorId)) {
       for (const r of baixar(estoque, b.saborId, b.tamanho, b.qtd, hoje, ctx.diasMinimos)) {
@@ -58,6 +63,29 @@ export function montarVenda(v: NovaVenda, ctx: ContextoVenda, estoque: Estoque) 
       }
     }
   }
+
+  if (totalValor > 0) {
+    const categoria = categoriaParaCanal(v.canal)
+    const detalhes = formatarItensVendaCaixa(
+      v.itens,
+      undefined,
+      (prodId) => ctx.produtoPorId.get(prodId)?.nome,
+    )
+    const descricao = v.observacao ? `${categoria} · ${v.observacao}` : categoria
+    ops.push(op('movimentacoesCaixa', {
+      data: momento.toISOString().slice(0, 10),
+      tipo: 'entrada',
+      categoria,
+      descricao,
+      valor: totalValor,
+      formaPagamento: v.pagamento,
+      origem: 'venda',
+      referenciaId: vendaId,
+      detalhes,
+      registradoPor: sessao.nome,
+    }))
+  }
+
   return { vendaId, ops }
 }
 
@@ -71,11 +99,15 @@ export async function registrarVenda(v: NovaVenda, ctx: ContextoVenda): Promise<
 export async function desfazerVenda(vendaId: string, horaViradaDia: number) {
   const venda = await db.vendas.get(vendaId)
   if (!venda || venda.deletedAt) return
+  const agora = new Date().toISOString()
   const movimentos = await movimentosDaReferencia([vendaId])
+  const lancamentosCaixa = (await db.movimentacoesCaixa.where('referenciaId').equals(vendaId).toArray()).filter((m) => !m.deletedAt)
   await gravar(
-    op('vendas', { ...venda, deletedAt: new Date().toISOString() }),
+    op('vendas', { ...venda, deletedAt: agora }),
+    ...lancamentosCaixa.map((l) => op('movimentacoesCaixa', { ...l, deletedAt: agora })),
     ...movimentos.map((m) => movimento({ horaViradaDia }, m.tipo, vendaId, {
       saborId: m.saborId, tamanho: m.tamanho, loteId: m.loteId, qtd: -m.qtd,
     })),
   )
 }
+
