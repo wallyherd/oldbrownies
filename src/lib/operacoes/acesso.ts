@@ -40,7 +40,47 @@ export async function gerarConvite(papel: Papel) {
   if (papel === 'dono' && await jaTemDono(sessao.empresaId)) throw new Error('A empresa já tem dono.')
   const codigo = gerarCodigo()
   const expiraEm = new Date(Date.now() + VALIDADE_CONVITE_DIAS * 86_400_000).toISOString()
-  await gravar(op('convites', { codigo, papel, criadoPor: sessao.nome, expiraEm }))
+  const id = novoId()
+  const agora = new Date().toISOString()
+
+  // Se a nuvem estiver ativa e online, insere diretamente no Supabase para estar disponível imediatamente
+  if (nuvem && navigator.onLine) {
+    const linhaNuvem = {
+      id,
+      empresa_id: sessao.empresaId,
+      codigo,
+      papel,
+      criado_por: sessao.nome,
+      expira_em: expiraEm,
+      created_at: agora,
+      updated_at: agora,
+      updated_by: sessao.userId,
+    }
+    const { error } = await nuvem.from('convites').insert(linhaNuvem)
+    if (error) {
+      console.warn('Erro ao inserir convite direto no Supabase:', error.message)
+      // Envia para a fila local para retentativa
+      await gravar(op('convites', { id, codigo, papel, criadoPor: sessao.nome, expiraEm }))
+      void sincronizar()
+      throw new Error(`Não foi possível salvar o código na nuvem: ${error.message}`)
+    }
+    // Salvo com sucesso no Supabase! Salva no banco local sem passar por outbox
+    await db.convites.put({
+      id,
+      empresaId: sessao.empresaId,
+      codigo,
+      papel,
+      criadoPor: sessao.nome,
+      expiraEm,
+      createdAt: agora,
+      updatedAt: agora,
+      updatedBy: sessao.userId,
+      deletedAt: null,
+    })
+  } else {
+    await gravar(op('convites', { id, codigo, papel, criadoPor: sessao.nome, expiraEm }))
+  }
+
   return codigo
 }
 
@@ -69,9 +109,25 @@ async function aceitarConviteNuvem(codigo: string, nome: string, email?: string)
   await puxarTudoDeNovo(empresaId)
 }
 
-export function aceitarConvite(codigo: string, nome: string, email?: string) {
+export async function aceitarConvite(codigo: string, nome: string, email?: string) {
   const limpo = codigo.trim().toUpperCase()
-  return nuvem ? aceitarConviteNuvem(limpo, nome, email) : aceitarConviteLocal(limpo, nome)
+  if (nuvem) {
+    try {
+      await aceitarConviteNuvem(limpo, nome, email)
+      return
+    } catch (err: unknown) {
+      // Se a nuvem falhou com "Código inválido", verifica se o convite existe no banco local (ex: mesmo aparelho de testes)
+      const conviteLocal = (await db.convites.where('codigo').equals(limpo).toArray())
+        .find((c) => !c.deletedAt && !c.usadoPor && c.expiraEm > new Date().toISOString())
+      if (conviteLocal) {
+        console.warn('Convite aceito localmente como fallback.')
+        await aceitarConviteLocal(limpo, nome)
+        return
+      }
+      throw err
+    }
+  }
+  await aceitarConviteLocal(limpo, nome)
 }
 
 export async function registrarAcesso() {
@@ -94,4 +150,3 @@ export async function sairDaConta() {
   await db.delete()
   window.location.href = '/'
 }
-

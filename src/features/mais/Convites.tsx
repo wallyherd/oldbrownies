@@ -6,7 +6,7 @@ import { gerarConvite } from '@/lib/operacoes/acesso'
 import { temNuvem } from '@/lib/sync/sincronizar'
 import { Aviso, Botao, Escolha, Selo } from '@/components/ui/basicos'
 import { Secao, Tela } from '@/components/ui/Tela'
-import { mostrarErro } from '@/components/ui/Toast'
+import { mostrarErro, mostrarToast } from '@/components/ui/Toast'
 
 const ROTULO: Record<Papel, string> = { dono: 'Dono', mentor: 'Mentor', equipe: 'Equipe', parceiro: 'Parceiro' }
 
@@ -20,17 +20,34 @@ export function Convites() {
   ]
   const [papel, setPapel] = useState<Papel>('equipe')
   const [codigo, setCodigo] = useState<string | null>(null)
+  const [gerando, setGerando] = useState(false)
   const agora = new Date().toISOString()
+
+  async function handleGerar() {
+    setGerando(true)
+    try {
+      const cod = await gerarConvite(papel)
+      setCodigo(cod)
+      mostrarToast('Código gerado com sucesso!')
+    } catch (e) {
+      mostrarErro(e)
+    } finally {
+      setGerando(false)
+    }
+  }
 
   return (
     <Tela titulo="Convites" voltar subtitulo="A empresa tem um único dono">
       {!temNuvem() && <Aviso tom="neutro">Sem nuvem, o código só funciona neste aparelho (Trocar de perfil → Tenho um código).</Aviso>}
       <Escolha rotulo="Convidar como" valor={papel} aoMudar={setPapel} opcoes={opcoes} />
-      <Botao bloco onClick={() => gerarConvite(papel).then(setCodigo).catch(mostrarErro)}>Gerar código</Botao>
+      <Botao bloco disabled={gerando} onClick={handleGerar}>
+        {gerando ? 'Gerando código…' : 'Gerar código'}
+      </Botao>
       {codigo && (
-        <div className="moldura bg-carvao p-6 text-center">
+        <div className="moldura bg-carvao p-6 text-center space-y-2">
           <p className="rotulo">Código de {ROTULO[papel].toLowerCase()} · vale 7 dias</p>
-          <p className="mt-2 select-all font-titulo text-5xl font-bold tracking-[0.2em]">{codigo}</p>
+          <p className="select-all font-titulo text-5xl font-bold tracking-[0.2em] text-ouro">{codigo}</p>
+          <p className="text-[13px] text-cinza">Copie ou envie este código para o novo membro entrar.</p>
         </div>
       )}
 

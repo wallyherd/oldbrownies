@@ -28,6 +28,7 @@ export interface Empresa extends Base {
   chavePix: string
   endereco: string
   fuso: string
+  criadaPor?: string
 }
 
 export interface Membro extends Base {

@@ -11,13 +11,15 @@ import { reais } from '@/lib/formato'
 import { desfazerVenda, registrarVenda } from '@/lib/operacoes/vendas'
 import { Abas } from '@/components/ui/Abas'
 import { Aviso, Botao, Vazio } from '@/components/ui/basicos'
-import { Stepper } from '@/components/ui/Stepper'
 import { Secao, Tela } from '@/components/ui/Tela'
 import { mostrarErro, mostrarToast } from '@/components/ui/Toast'
 import { MixSabores, mixSortido } from './MixSabores'
 
 const ABAS: Array<{ valor: TipoParceiro; rotulo: string }> = [
-  { valor: 'vendedor', rotulo: 'Vendedor' }, { valor: 'motorista', rotulo: 'Motorista' }, { valor: 'ponto', rotulo: 'Ponto' }, { valor: 'rede', rotulo: 'Rede' },
+  { valor: 'vendedor', rotulo: 'Vendedor' },
+  { valor: 'motorista', rotulo: 'Motorista' },
+  { valor: 'ponto', rotulo: 'Ponto' },
+  { valor: 'rede', rotulo: 'Rede' },
 ]
 const ORDEM_STATUS: Record<string, number> = { ativo: 0, teste: 1, treino: 2, pausado: 3, candidato: 4, saiu: 5 }
 const DIAS_MINIMOS_PONTO = 7
@@ -31,15 +33,18 @@ export function Repasse() {
   const parceiros = useRegistros('parceiros')
   const estoque = useEstoque(hoje)
   const [parceiroId, setParceiroId] = useState<string | null>(params.get('parceiro'))
-  const [unidadesPequeno, setUnidadesPequeno] = useState(tipo === 'ponto' ? 0 : 1)
-  const [unidadesGrande, setUnidadesGrande] = useState(tipo === 'ponto' ? 1 : 0)
+
+  const pecasPequenoPorUnidade = cad.pecasPorForma.pequeno || 35
+  const pecasGrandePorUnidade = tipo === 'ponto' ? 24 : (cad.pecasPorForma.grande || 24)
+
+  // Quantidades livres em peças a partir de 1 peça
+  const [qtdPequeno, setQtdPequeno] = useState(tipo === 'ponto' ? 0 : pecasPequenoPorUnidade)
+  const [qtdGrande, setQtdGrande] = useState(tipo === 'ponto' ? pecasGrandePorUnidade : 0)
   const [pagamento, setPagamento] = useState<Pagamento>('pix')
   const [enviando, setEnviando] = useState(false)
 
-  const pecasPequenoPorUnidade = cad.pecasPorForma.pequeno
-  const pecasGrandePorUnidade = tipo === 'ponto' ? 24 : cad.pecasPorForma.grande
-  const totalPequeno = unidadesPequeno * pecasPequenoPorUnidade
-  const totalGrande = unidadesGrande * pecasGrandePorUnidade
+  const totalPequeno = qtdPequeno
+  const totalGrande = qtdGrande
 
   const [mixPequeno, setMixPequeno] = useState<Record<string, number>>(() => mixSortido(totalPequeno, cad.sabores))
   const [mixGrande, setMixGrande] = useState<Record<string, number>>(() => mixSortido(totalGrande, cad.sabores))
@@ -140,8 +145,8 @@ export function Repasse() {
         acao: { rotulo: 'Desfazer', fazer: () => void desfazerVenda(vendaId, cad.config.horaViradaDia) },
       })
       setParceiroId(null)
-      setUnidadesPequeno(tipo === 'ponto' ? 0 : 1)
-      setUnidadesGrande(tipo === 'ponto' ? 1 : 0)
+      setQtdPequeno(tipo === 'ponto' ? 0 : pecasPequenoPorUnidade)
+      setQtdGrande(tipo === 'ponto' ? pecasGrandePorUnidade : 0)
     } catch (e) {
       mostrarErro(e)
     } finally {
@@ -152,15 +157,15 @@ export function Repasse() {
   const escolhido = lista.find((p) => p.id === parceiroId)
 
   return (
-    <Tela titulo="Repasse a parceiro" voltar subtitulo="Parceiro → formas/tamanhos → recebimento">
+    <Tela titulo="Repasse a parceiro" voltar subtitulo="Parceiro → quantidades livres/mix → recebimento">
       <Abas
         abas={ABAS}
         ativa={tipo}
         aoMudar={(t) => {
           setParams({ tipo: t }, { replace: true })
           setParceiroId(null)
-          setUnidadesPequeno(t === 'ponto' ? 0 : 1)
-          setUnidadesGrande(t === 'ponto' ? 1 : 0)
+          setQtdPequeno(t === 'ponto' ? 0 : pecasPequenoPorUnidade)
+          setQtdGrande(t === 'ponto' ? 24 : 0)
           setPagamento('pix')
         }}
       />
@@ -180,23 +185,26 @@ export function Repasse() {
                     p.id === parceiroId ? 'border-osso bg-grafite' : 'border-fio bg-carvao',
                   )}
                 >
-                  <span className="flex-1 font-bold">{p.nome}</span>
-                  {p.status !== 'ativo' && (
-                    <span className="text-[13px] uppercase tracking-[0.08em] text-cinza">{p.status}</span>
-                  )}
-                  {p.id === parceiroId && <Check className="size-5" aria-hidden />}
+                  <span className="flex-1">
+                    <span className="block font-bold">{p.nome}</span>
+                    <span className="block text-[13px] text-cinza">
+                      {p.polo ? `polo ${p.polo} · ` : ''}
+                      status: {p.status}
+                    </span>
+                  </span>
+                  {p.id === parceiroId && <Check className="size-5 text-verde" aria-hidden />}
                 </button>
               </li>
             ))}
           </ul>
         ) : (
           <Vazio>
-            Nenhum {ABAS.find((a) => a.valor === tipo)?.rotulo.toLowerCase()} cadastrado.
+            Nenhum parceiro do tipo &quot;{tipo}&quot; cadastrado.{' '}
             {sessao.papel === 'dono' && (
               <>
-                {' '}
-                <Link to={`/rede?aba=${tipo}`} className="underline">
-                  Cadastrar na Rede
+                Cadastre em{' '}
+                <Link to="/rede" className="font-bold underline">
+                  Rede
                 </Link>
                 .
               </>
@@ -209,46 +217,182 @@ export function Repasse() {
         <>
           <Secao titulo="Quantidades e tamanhos">
             <div className="space-y-3">
-              <div className="rounded-deco border border-fio bg-carvao p-3.5 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
+              {/* PEÇAS PEQUENAS */}
+              <div className="rounded-deco border border-fio bg-carvao p-3.5 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
                     <span className="font-bold text-base block text-osso">Peças Pequenas</span>
                     <span className="text-[13px] text-cinza block">
-                      {unidadesPequeno} forma{unidadesPequeno !== 1 ? 's' : ''} ({totalPequeno} peças){tipo !== 'rede' ? ` · ${reais(precoPequenoPadrao)}/peça` : ' · preço variável'}
+                      {qtdPequeno} peça{qtdPequeno !== 1 ? 's' : ''}
+                      {qtdPequeno > 0 && ` (${(qtdPequeno / pecasPequenoPorUnidade).toFixed(1).replace('.0', '')} forma${qtdPequeno >= pecasPequenoPorUnidade ? 's' : ''})`}
+                      {tipo !== 'rede' ? ` · ${reais(precoPequenoPadrao)}/peça` : ' · preço variável'}
                     </span>
                   </div>
-                  <Stepper
-                    rotulo="Formas pequenas"
-                    valor={unidadesPequeno}
-                    min={0}
-                    max={20}
-                    aoMudar={setUnidadesPequeno}
-                  />
+
+                  {/* Controle de quantidade em peças */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      aria-label="Diminuir 1 peça pequena"
+                      disabled={qtdPequeno <= 0}
+                      onClick={() => setQtdPequeno(Math.max(0, qtdPequeno - 1))}
+                      className="flex size-11 items-center justify-center rounded-deco border border-fio bg-grafite font-bold text-lg text-osso active:scale-95 disabled:opacity-30 touch-manipulation"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min={0}
+                      max={9999}
+                      value={qtdPequeno || ''}
+                      placeholder="0"
+                      onChange={(e) => {
+                        const val = Math.max(0, parseInt(e.target.value, 10) || 0)
+                        setQtdPequeno(val)
+                      }}
+                      className="h-11 w-16 rounded-deco border border-fio bg-carvao text-center text-lg font-bold text-osso focus:border-osso focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      aria-label="Aumentar 1 peça pequena"
+                      onClick={() => setQtdPequeno(qtdPequeno + 1)}
+                      className="flex size-11 items-center justify-center rounded-deco border border-fio bg-grafite font-bold text-lg text-osso active:scale-95 touch-manipulation"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Atalhos rápidos de quantidade */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-fio/60 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setQtdPequeno(qtdPequeno + 1)}
+                    className="rounded-deco border border-fio bg-grafite/60 px-2.5 py-1 text-xs text-cinza active:scale-95 hover:text-osso"
+                  >
+                    +1 peça
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQtdPequeno(qtdPequeno + 5)}
+                    className="rounded-deco border border-fio bg-grafite/60 px-2.5 py-1 text-xs text-cinza active:scale-95 hover:text-osso"
+                  >
+                    +5 peças
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQtdPequeno(qtdPequeno + pecasPequenoPorUnidade)}
+                    className="rounded-deco border border-fio bg-grafite/60 px-2.5 py-1 text-xs text-cinza active:scale-95 hover:text-osso"
+                  >
+                    +1 forma ({pecasPequenoPorUnidade} un)
+                  </button>
+                  {qtdPequeno > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setQtdPequeno(0)}
+                      className="rounded-deco border border-vermelho/30 bg-vermelho/10 px-2 py-1 text-xs text-vermelho active:scale-95 ml-auto"
+                    >
+                      Zerar
+                    </button>
+                  )}
                 </div>
               </div>
 
-              <div className="rounded-deco border border-fio bg-carvao p-3.5 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
+              {/* PEÇAS GRANDES */}
+              <div className="rounded-deco border border-fio bg-carvao p-3.5 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
                     <span className="font-bold text-base block text-osso">Peças Grandes</span>
                     <span className="text-[13px] text-cinza block">
-                      {unidadesGrande} {tipo === 'ponto' ? 'caixa' : 'forma'}{unidadesGrande !== 1 ? 's' : ''} ({totalGrande} peças) · {reais(precoGrande)}/peça
+                      {qtdGrande} peça{qtdGrande !== 1 ? 's' : ''}
+                      {qtdGrande > 0 && ` (${(qtdGrande / pecasGrandePorUnidade).toFixed(1).replace('.0', '')} ${tipo === 'ponto' ? 'cx' : 'forma'}${qtdGrande >= pecasGrandePorUnidade ? 's' : ''})`} · {reais(precoGrande)}/peça
                     </span>
                   </div>
-                  <Stepper
-                    rotulo={tipo === 'ponto' ? 'Caixas grandes' : 'Formas grandes'}
-                    valor={unidadesGrande}
-                    min={0}
-                    max={20}
-                    aoMudar={setUnidadesGrande}
-                  />
+
+                  {/* Controle de quantidade em peças */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      aria-label="Diminuir 1 peça grande"
+                      disabled={qtdGrande <= 0}
+                      onClick={() => setQtdGrande(Math.max(0, qtdGrande - 1))}
+                      className="flex size-11 items-center justify-center rounded-deco border border-fio bg-grafite font-bold text-lg text-osso active:scale-95 disabled:opacity-30 touch-manipulation"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min={0}
+                      max={9999}
+                      value={qtdGrande || ''}
+                      placeholder="0"
+                      onChange={(e) => {
+                        const val = Math.max(0, parseInt(e.target.value, 10) || 0)
+                        setQtdGrande(val)
+                      }}
+                      className="h-11 w-16 rounded-deco border border-fio bg-carvao text-center text-lg font-bold text-osso focus:border-osso focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      aria-label="Aumentar 1 peça grande"
+                      onClick={() => setQtdGrande(qtdGrande + 1)}
+                      className="flex size-11 items-center justify-center rounded-deco border border-fio bg-grafite font-bold text-lg text-osso active:scale-95 touch-manipulation"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Atalhos rápidos de quantidade */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-fio/60 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setQtdGrande(qtdGrande + 1)}
+                    className="rounded-deco border border-fio bg-grafite/60 px-2.5 py-1 text-xs text-cinza active:scale-95 hover:text-osso"
+                  >
+                    +1 peça
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQtdGrande(qtdGrande + 5)}
+                    className="rounded-deco border border-fio bg-grafite/60 px-2.5 py-1 text-xs text-cinza active:scale-95 hover:text-osso"
+                  >
+                    +5 peças
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQtdGrande(qtdGrande + pecasGrandePorUnidade)}
+                    className="rounded-deco border border-fio bg-grafite/60 px-2.5 py-1 text-xs text-cinza active:scale-95 hover:text-osso"
+                  >
+                    +{tipo === 'ponto' ? '1 caixa' : '1 forma'} ({pecasGrandePorUnidade} un)
+                  </button>
+                  {qtdGrande > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setQtdGrande(0)}
+                      className="rounded-deco border border-vermelho/30 bg-vermelho/10 px-2 py-1 text-xs text-vermelho active:scale-95 ml-auto"
+                    >
+                      Zerar
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           </Secao>
 
           {totalPequeno > 0 && (
-            <Secao titulo={`Mix — Brownies Pequenos (${somaMixPequeno} de ${totalPequeno})`}>
+            <Secao
+              titulo={`Mix — Brownies Pequenos (${somaMixPequeno} de ${totalPequeno})`}
+              direita={somaMixPequeno !== totalPequeno ? (
+                <button
+                  type="button"
+                  onClick={() => setQtdPequeno(somaMixPequeno)}
+                  className="text-xs text-ouro underline active:opacity-70 font-semibold"
+                >
+                  Ajustar total para {somaMixPequeno}
+                </button>
+              ) : undefined}
+            >
               <MixSabores
                 total={totalPequeno}
                 mix={mixPequeno}
@@ -261,7 +405,18 @@ export function Repasse() {
           )}
 
           {totalGrande > 0 && (
-            <Secao titulo={`Mix — Brownies Grandes (${somaMixGrande} de ${totalGrande})`}>
+            <Secao
+              titulo={`Mix — Brownies Grandes (${somaMixGrande} de ${totalGrande})`}
+              direita={somaMixGrande !== totalGrande ? (
+                <button
+                  type="button"
+                  onClick={() => setQtdGrande(somaMixGrande)}
+                  className="text-xs text-ouro underline active:opacity-70 font-semibold"
+                >
+                  Ajustar total para {somaMixGrande}
+                </button>
+              ) : undefined}
+            >
               <MixSabores
                 total={totalGrande}
                 mix={mixGrande}
@@ -274,7 +429,7 @@ export function Repasse() {
           )}
 
           {semPecas && (
-            <Aviso tom="aviso">Selecione ao menos 1 forma de peças pequenas ou grandes acima.</Aviso>
+            <Aviso tom="aviso">Selecione ao menos 1 peça (pequena ou grande) acima.</Aviso>
           )}
 
           {precoInvalido && (
@@ -360,4 +515,3 @@ export function Repasse() {
     </Tela>
   )
 }
-

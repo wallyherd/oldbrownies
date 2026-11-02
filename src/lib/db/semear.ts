@@ -57,7 +57,7 @@ export async function criarEmpresa({ nomeEmpresa, criador }: NovaEmpresa) {
   const membroId = novoId()
   const hoje = diaComercial(new Date(), S.CONFIG.horaViradaDia)
   await gravarSemSessao({ empresaId, userId: criador.userId }, [
-    op('empresas', { ...S.EMPRESA, nome: nomeEmpresa || S.EMPRESA.nome, id: empresaId }),
+    op('empresas', { ...S.EMPRESA, nome: nomeEmpresa || S.EMPRESA.nome, id: empresaId, empresaId, criadaPor: criador.userId }),
     op('membros', { id: membroId, userId: criador.userId, papel: criador.papel, nome: criador.nome }),
     op('configs', S.CONFIG),
     ...sementesDeCusto(),

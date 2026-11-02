@@ -26,6 +26,12 @@ export async function entrarComEmail(email: string, senha: string, criarConta: b
   if (error) throw new Error(error.message)
 }
 
+export async function alterarSenhaNuvem(novaSenha: string) {
+  if (!nuvem) throw new Error('Nuvem não configurada.')
+  const { error } = await nuvem.auth.updateUser({ password: novaSenha })
+  if (error) throw new Error(error.message)
+}
+
 // Traz do servidor as empresas de que o usuário é membro (dono, mentor ou equipe).
 export async function baixarMembrosDoUsuario(userId: string) {
   if (!nuvem || !navigator.onLine) return

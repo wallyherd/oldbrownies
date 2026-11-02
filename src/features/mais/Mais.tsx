@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRight, LogOut } from 'lucide-react'
+import { ChevronRight, KeyRound, LogOut } from 'lucide-react'
 import type { Papel } from '@/lib/db/tipos'
 import { useSessao } from '@/lib/sessao'
 import { useCadastros } from '@/lib/dados/cadastros'
 import { sair, sairDaConta } from '@/lib/operacoes/acesso'
-import { Botao } from '@/components/ui/basicos'
+import { alterarSenhaNuvem } from '@/lib/sync/auth'
+import { Botao, Campo } from '@/components/ui/basicos'
+import { Folha } from '@/components/ui/Folha'
 import { Secao, Tela } from '@/components/ui/Tela'
-import { mostrarToast } from '@/components/ui/Toast'
+import { mostrarErro, mostrarToast } from '@/components/ui/Toast'
 
 interface Item { para: string; rotulo: string; detalhe?: string; papeis: Papel[] }
 
@@ -52,6 +54,12 @@ export function Mais() {
   const navegar = useNavigate()
   const [saindo, setSaindo] = useState(false)
 
+  // Modal de alteração de senha
+  const [folhaSenha, setFolhaSenha] = useState(false)
+  const [novaSenha, setNovaSenha] = useState('')
+  const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [salvandoSenha, setSalvandoSenha] = useState(false)
+
   async function handleDeslogar() {
     if (!window.confirm('Deseja realmente deslogar da sua conta?')) return
     setSaindo(true)
@@ -61,6 +69,30 @@ export function Mais() {
       navegar('/entrar', { replace: true })
     } finally {
       setSaindo(false)
+    }
+  }
+
+  async function handleAlterarSenha(e: FormEvent) {
+    e.preventDefault()
+    if (novaSenha.length < 6) {
+      mostrarErro('A nova senha deve ter no mínimo 6 caracteres.')
+      return
+    }
+    if (novaSenha !== confirmarSenha) {
+      mostrarErro('As senhas digitadas não coincidem.')
+      return
+    }
+    setSalvandoSenha(true)
+    try {
+      await alterarSenhaNuvem(novaSenha)
+      mostrarToast('Senha alterada com sucesso!')
+      setFolhaSenha(false)
+      setNovaSenha('')
+      setConfirmarSenha('')
+    } catch (erro) {
+      mostrarErro(erro)
+    } finally {
+      setSalvandoSenha(false)
     }
   }
 
@@ -98,6 +130,18 @@ export function Mais() {
 
           <div className="grid gap-2 pt-2 border-t border-fio">
             <Botao
+              variante="secundario"
+              bloco
+              onClick={() => {
+                setNovaSenha('')
+                setConfirmarSenha('')
+                setFolhaSenha(true)
+              }}
+            >
+              <KeyRound className="size-4 shrink-0" aria-hidden />
+              Alterar senha da conta
+            </Botao>
+            <Botao
               variante="fantasma"
               bloco
               onClick={() => {
@@ -119,6 +163,42 @@ export function Mais() {
           </div>
         </div>
       </Secao>
+
+      <Folha aberta={folhaSenha} aoFechar={() => setFolhaSenha(false)} titulo="Alterar senha">
+        <form onSubmit={handleAlterarSenha} className="space-y-4">
+          <p className="text-[14px] text-cinza leading-relaxed">
+            Digite a sua nova senha de acesso à conta da nuvem. Ela deve ter no mínimo 6 caracteres.
+          </p>
+          <Campo
+            rotulo="Nova senha"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={6}
+            placeholder="Mínimo 6 caracteres"
+            value={novaSenha}
+            onChange={(e) => setNovaSenha(e.target.value)}
+          />
+          <Campo
+            rotulo="Confirmar nova senha"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={6}
+            placeholder="Repita a nova senha"
+            value={confirmarSenha}
+            onChange={(e) => setConfirmarSenha(e.target.value)}
+          />
+          <div className="pt-2 space-y-2">
+            <Botao type="submit" bloco disabled={salvandoSenha}>
+              {salvandoSenha ? 'Alterando senha…' : 'Salvar nova senha'}
+            </Botao>
+            <Botao variante="fantasma" bloco onClick={() => setFolhaSenha(false)} type="button">
+              Cancelar
+            </Botao>
+          </div>
+        </form>
+      </Folha>
     </Tela>
   )
 }

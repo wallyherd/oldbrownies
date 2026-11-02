@@ -37,16 +37,21 @@ function checarPermissao(papel: Papel, tabela: NomeTabela, registro: Record<stri
   if (!pode || custoDoOutroLado) throw new Error(`O perfil ${papel} não pode alterar ${tabela}.`)
 }
 
-function completar(dados: Record<string, unknown>, sessao: Pick<Sessao, 'empresaId' | 'userId'>, agora: string) {
-  return {
+function completar(tabela: NomeTabela, dados: Record<string, unknown>, sessao: Pick<Sessao, 'empresaId' | 'userId'>, agora: string) {
+  const id = (dados.id as string | undefined) ?? novoId()
+  const res: Record<string, unknown> = {
     ...dados,
-    id: dados.id ?? novoId(),
-    empresaId: dados.empresaId ?? sessao.empresaId,
+    id,
+    empresaId: dados.empresaId ?? sessao.empresaId ?? id,
     createdAt: dados.createdAt ?? agora,
     updatedAt: agora,
     updatedBy: sessao.userId,
     deletedAt: dados.deletedAt ?? null,
-  } as Base & Record<string, unknown>
+  }
+  if (tabela === 'empresas') {
+    res.criadaPor = dados.criadaPor ?? sessao.userId
+  }
+  return res as unknown as Base & Record<string, unknown>
 }
 
 async function persistir(itens: Array<{ tabela: NomeTabela; registro: Base }>) {
@@ -66,7 +71,7 @@ export async function gravar(...ops: Op[]): Promise<string[]> {
   const agora = new Date().toISOString()
   const itens = ops.map(({ tabela, dados }) => {
     checarPermissao(sessao.papel, tabela, dados)
-    return { tabela, registro: completar(dados, sessao, agora) }
+    return { tabela, registro: completar(tabela, dados, sessao, agora) }
   })
   await persistir(itens)
   return itens.map((i) => i.registro.id)
@@ -75,7 +80,7 @@ export async function gravar(...ops: Op[]): Promise<string[]> {
 // Criação da empresa: ainda não há sessão nem papel para checar.
 export async function gravarSemSessao(autor: Pick<Sessao, 'empresaId' | 'userId'>, ops: Op[]) {
   const agora = new Date().toISOString()
-  await persistir(ops.map(({ tabela, dados }) => ({ tabela, registro: completar(dados, autor, agora) })))
+  await persistir(ops.map(({ tabela, dados }) => ({ tabela, registro: completar(tabela, dados, autor, agora) })))
 }
 
 export async function atualizar<K extends NomeTabela>(tabela: K, id: string, patch: Partial<Registros[K]>) {
@@ -84,7 +89,7 @@ export async function atualizar<K extends NomeTabela>(tabela: K, id: string, pat
   if (!atual) throw new Error('Registro não encontrado.')
   const novo = { ...atual, ...patch } as unknown as Record<string, unknown>
   checarPermissao(sessao.papel, tabela, novo)
-  await persistir([{ tabela, registro: completar(novo, sessao, new Date().toISOString()) }])
+  await persistir([{ tabela, registro: completar(tabela, novo, sessao, new Date().toISOString()) }])
 }
 
 // Exclusão lógica: nada é apagado de verdade.
