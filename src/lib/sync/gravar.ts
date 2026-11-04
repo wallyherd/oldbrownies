@@ -23,13 +23,14 @@ const ESCRITA: Record<Papel, NomeTabela[] | 'todas'> = {
   equipe: [
     'vendas', 'vendaItens', 'movimentos', 'producoes', 'producaoItens', 'lotes',
     'perdas', 'amostras', 'contagens', 'checklistItens', 'membros',
+    'movimentacoesCaixa', 'listaCompras', 'tarefasAvulsas',
   ],
   mentor: ['recadosMentor', 'tarefasAvulsas', 'notasMentor', 'configsMentor', 'custosFixos', 'convites', 'membros'],
   parceiro: [],
 }
 const SO_DO_MENTOR: NomeTabela[] = ['notasMentor', 'configsMentor']
 
-function checarPermissao(papel: Papel, tabela: NomeTabela, registro: Record<string, unknown>) {
+export function checarPermissao(papel: Papel, tabela: NomeTabela, registro: Record<string, unknown>) {
   const permitidas = ESCRITA[papel]
   const pode = permitidas === 'todas' ? !SO_DO_MENTOR.includes(tabela) : permitidas.includes(tabela)
   const custoDoOutroLado = tabela === 'custosFixos'
